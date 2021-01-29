@@ -2,7 +2,7 @@
 
 echo ""
 echo "Before install Caddy v2 & Filebroswer v2, make sure your domain has pointed to this VPS's IP."
-
+echo "If you want to use Google reCAPCHA, please prepair the key and secret."
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
@@ -15,6 +15,13 @@ case $answer in
 ## input domain
 echo -e "Please input your domain name: \c"
 read domain
+
+echo -e "Please input your Google reCAPCHA Key: \c"
+read key
+
+echo -e "Please input your Google reCAPCHA Secret: \c"
+read secret
+
 
 ## download Caddy
 apt-get update -y && apt-get install curl -y
@@ -149,10 +156,14 @@ mkdir /etc/filebroswer
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --port 8091 \
-	--baseurl "/file" \
+    --baseurl "/file" \
     --root "/www/filebrowser/" \
-	--log "/var/log/filebrowser.log" \
-	--locale "zh-cn"
+    --log "/var/log/filebrowser.log" \
+    --auth.method=json \
+    --recaptcha.host https://recaptcha.net \
+    --recaptcha.key "$key" \
+    --recaptcha.secret "$secret" \
+    --locale "zh-cn"
 
 # add user tony	
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
