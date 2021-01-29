@@ -54,7 +54,7 @@ $domain {
        }
 
     filemanager /share www/filebrowser/share/ {
-        database /etc/ssl/caddy/filemanager/$domain_share.db
+        database /etc/ssl/caddy/filemanager/$domain-share.db
         locale         zh-cn
         allow_commands false
         allow_new      false
