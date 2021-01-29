@@ -25,14 +25,14 @@ curl -fsSL https://filebrowser.org/get.sh | bash
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --port 8091 \
-	--baseurl "/file" \
+    --baseurl "/file" \
     --root "/www/filebrowser/" \
-	--log "/var/log/filebrowser.log" \
-	--auth.method=json \
+    --log "/var/log/filebrowser.log" \
+    --auth.method=json \
     --recaptcha.host https://recaptcha.net \
     --recaptcha.key "$key" \
     --recaptcha.secret "$secret" \
-	--locale "zh-cn"
+    --locale "zh-cn"
 
 # add user tony	
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
