@@ -80,7 +80,7 @@ $domain {
        path /file
        path /file/*
       }
-    reverse_proxy @file localhost:8091
+    reverse_proxy @file localhost:8089
 
 # Or serve a PHP site through php-fpm:
 # php_fastcgi localhost:9000
@@ -155,7 +155,7 @@ curl -fsSL https://filebrowser.org/get.sh | bash
 mkdir /etc/filebroswer
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-    --port 8091 \
+    --port 8089 \
     --baseurl "/file" \
     --root "/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
