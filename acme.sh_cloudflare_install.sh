@@ -39,7 +39,7 @@ export CF_Token="$cf_token"
 export CF_Zone_ID="$cf_zone_id"
 
 # Get ssl certs
-~/.acme.sh/acme.sh --issue --dns dns_cf -d <$domain> -d <www.$domain>
+~/.acme.sh/acme.sh --issue --dns dns_cf -d $domain -d www.$domain
 
 # Install ssl certs to root/cert-files
 mkdir ~/cert-files/$domain -p
