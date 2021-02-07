@@ -54,7 +54,7 @@ export CF_Zone_ID="$cf_zone_id"
 
     *)
     echo "exit"
-	exit 1
+    exit 1
     ;;
 
 esac
