@@ -18,13 +18,16 @@ read secret
 
 
 # download filebroswer
+    if [ ! -x "/usr/bin/curl" ]; then 
+       apt-get update -y && apt-get install curl -y
+    fi
 curl -fsSL https://filebrowser.org/get.sh | bash
 
 
 # config init
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-    --port 8091 \
+    --port 8089 \
     --baseurl "/file" \
     --root "/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
