@@ -38,10 +38,7 @@ read cf_zone_id
 # install acmd.sh
 
     if [ ! -x "/usr/bin/curl" ]; then 
-
-       apt-get update -y
-       apt-get install curl -y
-
+       apt-get update -y && apt-get install curl -y
     fi
 
 curl https://get.acme.sh | sh

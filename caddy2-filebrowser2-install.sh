@@ -10,7 +10,7 @@ case $answer in
     echo "continue..."
 
 
-#### install Caddy
+#### install Caddy2
 
 ## input domain
 echo -e "Please input your domain name: \c"
@@ -23,10 +23,13 @@ echo -e "Please input your Google reCAPCHA Secret: \c"
 read secret
 
 
-## download Caddy
-apt-get update -y && apt-get install curl -y
+## download Caddy2
 
-apt install -y debian-keyring debian-archive-keyring apt-transport-https
+    if [ ! -x "/usr/bin/curl" ]; then 
+       apt-get update -y && apt-get install curl -y
+    fi
+
+apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
 apt-get update -y

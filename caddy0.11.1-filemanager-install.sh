@@ -16,13 +16,14 @@ echo -e "Please input your domain name: \c"
 read domain
 
 ## download Caddy
-apt-get update -y && apt-get install curl -y
+
+# old install
 #curl https://getcaddy.com | bash -s personal http.filebrowser
 #curl https://getcaddy.com | bash -s personal
+#cp /usr/local/bin/caddy /usr/local/bin/caddy_no-filemanager
 
 ## download caddy v0.11.1 with filemanager
 wget -O /usr/local/bin/caddy_filemanager_v0.11.1 "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
-#cp /usr/local/bin/caddy /usr/local/bin/caddy_no-filemanager
 cp /usr/local/bin/caddy_filemanager_v0.11.1 /usr/local/bin/caddy
 chmod +x /usr/local/bin/caddy*
 
@@ -108,16 +109,10 @@ chmod -R 555 /www
 chmod -R 757 /www/filebrowser
 
 ## original caddy.service file
-#curl -s https://raw.githubusercontent.com/mholt/caddy/master/dist/init/linux-systemd/caddy.service -o /etc/systemd/system/caddy.service
-# echo "For Debian9, the file \"/etc/systemd/system/caddy.service\" need to modified to:"
-# echo "CapabilityBoundingSet=CAP_NET_BIND_SERVICE"
-# echo "AmbientCapabilities=CAP_NET_BIND_SERVICE"
-# echo "NoNewPrivileges=true"
-# echo "Then run the following scripts:"
-# echo "systemctl daemon-reload"
-# echo "systemctl enable caddy.service"
-# echo "systemctl start caddy.service"
-# echo "systemctl status caddy.service"
+# For Debian9, the file \"/etc/systemd/system/caddy.service\" need to modified to:
+# CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+# AmbientCapabilities=CAP_NET_BIND_SERVICE
+# NoNewPrivileges=true
 
 ## create modified caddy.service file
 cat > /etc/systemd/system/caddy.service << EOF
