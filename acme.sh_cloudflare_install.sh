@@ -44,24 +44,27 @@ export CF_Zone_ID="$cf_zone_id"
 # Install ssl certs to root/cert-files
 mkdir ~/cert-files/$domain -p
 ~/.acme.sh/acme.sh --install-cert -d $domain \
---cert-file      ~/cert-files/$domain/cert.pem  \
---key-file       ~/cert-files/$domain/key.pem  \
---fullchain-file ~/cert-files/$domain/fullchain.pem 
+    --cert-file      ~/cert-files/$domain/cert.pem  \
+    --key-file       ~/cert-files/$domain/key.pem  \
+    --fullchain-file ~/cert-files/$domain/fullchain.pem 
 
-#                                                    \
+#                                                         \
 #    --reloadcmd "systemctl reload nginx.service"
 
 
 cat << EOF
 
 Let’s Encrypt certificates for $domain is installed!
-Certificates path: root/cert-files/$domain
-ls ~/cert-files/$domain -lshF
-
 The certificates will be automatically renewed every 60 days.
 
+ls ~/cert-files/$domain -lshF
+EOF
 
-Issue certificate to new domain:
+ls ~/cert-files/$domain -lshF
+
+cat << EOF
+
+Issue certificate to new domain with CloudFlare DNS:
 acme.sh --issue --dns dns_cf -d <domain-name>
 
 Stop renewal in the future:
