@@ -9,7 +9,7 @@ if [ ! -x "/root/.acme.sh/acme.sh" ]; then
 
 cat << EOF
 
-# This shell will install acme.sh with CloudFlare DNS API and get Let’s Encrypt certificate.
+# This shell will install acme.sh with CloudFlare DNS API and get free SSL certificate.
 #
 # Please make sure get your CloudFlare API token and ZONE ID first
 #
@@ -49,6 +49,8 @@ export CF_Zone_ID="$cf_zone_id"
 
 # change default server to BuyPass
 ~/.acme.sh/acme.sh --set-default-ca  --server buypass
+#~/.acme.sh/acme.sh --set-default-ca  --server zerossl
+#~/.acme.sh/acme.sh --set-default-ca  --server letsencrypt
 
     ;;
 
