@@ -92,15 +92,15 @@ case $answer in
     1)  
     echo "continue to issue ZeroSSL certificates..."
     issuer="zerossl"
-	days="60"
+    days="60"
 ## continue check 
     ;;&
 
 ## choose ZeroSSL
     2)  
     echo "continue to issue BuyPass certificates..."
-	issuer="buypass"
-	days="150"
+    issuer="buypass"
+    days="150"
 ## continue check 
     ;;&
 
@@ -108,7 +108,7 @@ case $answer in
     3)  
     echo "continue to issue Let’s encrypt certificates..."
     issuer="letsencrypt"
-	days="60"
+    days="60"
 ## continue check 
     ;;&
 
