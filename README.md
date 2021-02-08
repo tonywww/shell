@@ -1,5 +1,5 @@
 # shell
-This is a group of shell files for VPS installation.
+This is a group of unix shell scripts for VPS installation.
 
 Tested on Debian 9
 
