@@ -47,9 +47,9 @@ curl https://get.acme.sh | sh
 export CF_Token="$cf_token"
 export CF_Zone_ID="$cf_zone_id"
 
-# change default server to BuyPass
-~/.acme.sh/acme.sh --set-default-ca  --server buypass
-#~/.acme.sh/acme.sh --set-default-ca  --server zerossl
+# change default server to ZeroSSL
+~/.acme.sh/acme.sh --set-default-ca  --server zerossl
+#~/.acme.sh/acme.sh --set-default-ca  --server buypass
 #~/.acme.sh/acme.sh --set-default-ca  --server letsencrypt
 
     ;;
@@ -77,8 +77,8 @@ fi
 
 cat << EOF
 
-1. issue BuyPass 180 days certificates (Default)
-2. issue ZeroSSL 90 days certificates
+1. issue ZeroSSL 90 days certificates (Default)
+2. issue BuyPass 180 days certificates
 3. issue Let’s encrypt 90 days certificates
 4. exit
 
@@ -90,17 +90,17 @@ case $answer in
 
 ## choose BuyPass
     1)  
-    echo "continue to issue BuyPass certificates..."
-    issuer="buypass"
-	days="150"
+    echo "continue to issue ZeroSSL certificates..."
+    issuer="zerossl"
+	days="60"
 ## continue check 
     ;;&
 
 ## choose ZeroSSL
     2)  
-    echo "continue to issue ZeroSSL certificates..."
-    issuer="zerossl"
-	days="60"
+    echo "continue to issue BuyPass certificates..."
+	issuer="buypass"
+	days="150"
 ## continue check 
     ;;&
 
@@ -113,14 +113,23 @@ case $answer in
     ;;&
 
 
+## register account
+    1|2)  
+    echo -e "Please input your e-mail to register $issuer: \c"
+    read email
+    ~/.acme.sh/acme.sh --register-account --server $issuer -m $email
+    echo "e-mail="$email
+## continue check 
+    ;;&
+
+
 ## issue certificates
     1|2|3)  
-
-echo "server="$issuer
-echo "renew days="$days
+    echo "server="$issuer
+    echo "renew days="$days
 
 # get domain name
-echo -e "Please input your domain name: \c"
+echo -e "Please input your domain name(without www.): \c"
 read domain
 
 # get ssl certs
@@ -137,7 +146,6 @@ mkdir ~/cert-files/$domain -p
 
 #                                                         \
 #    --reloadcmd "systemctl reload nginx.service"
-
 
 cat << EOF
 
