@@ -44,8 +44,8 @@ Please choose the default server:
 3. Let’s encrypt (90 days)
 
 EOF
-        read -p "Please choose your option: [1-3]" answer1
-        case $answer1 in  
+        read -p "Please choose your option: [1-3]" answer2
+        case $answer2 in  
 # choose default server
         3)
         server="letsencrypt"
@@ -105,8 +105,8 @@ cat << EOF
 EOF
 
 # choose issuer
-read -p "Please choose your option: [1-4]" answer2
-case $answer2 in  
+read -p "Please choose your option: [1-4]" answer3
+case $answer3 in  
 
     1|"")  
     echo "continue to issue ZeroSSL certificates..."
