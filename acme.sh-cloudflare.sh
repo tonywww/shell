@@ -23,34 +23,54 @@ cat << EOF
 # CloudFlare DNS API doesn't support .tk/.cf/.ga/.gq/.ml domains.
 EOF
 
-read -p "Continue? [y/n} " answer1
+    read -p "Continue? [y/n} " answer1
 
-case $answer1 in
+    case $answer1 in
     Y|y)
     echo "continue..."
 
-## get cloudflare token & zone_id and domain name
-echo -e "Please input your CloudFlare API token: \c"
-read cf_token
-echo -e "Please input your CloudFlare ZONE ID: \c"
-read cf_zone_id
+# get cloudflare token & zone_id and domain name
+    echo -e "Please input your CloudFlare API token: \c"
+    read cf_token
+    echo -e "Please input your CloudFlare ZONE ID: \c"
+    read cf_zone_id
+
+# make choice
+cat << EOF
+
+Please choose the default server:
+1. ZeroSSL       (90 days)  (Default)*
+2. BuyPass       (180 days)
+3. Let’s encrypt (90 days)
+
+EOF
+        read -p "Please choose your option: [1-3]" answer1
+        case $answer1 in  
+# choose default server
+        3)
+        server="letsencrypt"
+		;;
+        2)
+        server="buypass"
+        ;;
+        *)
+        server="zerossl"
+        ;;
+        esac
 
 # install acmd.sh
-
     if [ ! -x "/usr/bin/curl" ]; then 
        apt-get update -y && apt-get install curl -y
     fi
-
 curl https://get.acme.sh | sh
 
 # export CF DNS API
 export CF_Token="$cf_token"
 export CF_Zone_ID="$cf_zone_id"
 
-# change default server to ZeroSSL
-~/.acme.sh/acme.sh --set-default-ca  --server zerossl
-#~/.acme.sh/acme.sh --set-default-ca  --server buypass
-#~/.acme.sh/acme.sh --set-default-ca  --server letsencrypt
+# set default server
+~/.acme.sh/acme.sh --set-default-ca  --server $server
+
 
     ;;
 
@@ -59,7 +79,7 @@ export CF_Zone_ID="$cf_zone_id"
     exit 1
     ;;
 
-esac
+    esac
 
 
 else
@@ -77,54 +97,48 @@ fi
 
 cat << EOF
 
-1. issue ZeroSSL 90 days certificates (Default)
+1. issue ZeroSSL 90 days certificates (Default)*
 2. issue BuyPass 180 days certificates
 3. issue Let’s encrypt 90 days certificates
 4. exit
 
 EOF
 
-## make choice
-read -p "Please choose your option: [1-4]" answer
-case $answer in  
+# choose issuer
+read -p "Please choose your option: [1-4]" answer2
+case $answer2 in  
 
-## choose BuyPass
-    1)  
+    1|"")  
     echo "continue to issue ZeroSSL certificates..."
     issuer="zerossl"
     days="60"
-## continue check 
+# continue check 
     ;;&
 
-## choose ZeroSSL
     2)  
     echo "continue to issue BuyPass certificates..."
     issuer="buypass"
     days="150"
-## continue check 
+# continue check 
     ;;&
 
-## choose Let's encrypt
     3)  
     echo "continue to issue Let’s encrypt certificates..."
     issuer="letsencrypt"
     days="60"
-## continue check 
+# continue check 
     ;;&
 
-
-## register account
-    1|2)  
+# register account
+    1|2|"")  
     echo -e "Please input your e-mail to register $issuer: \c"
     read email
     ~/.acme.sh/acme.sh --register-account --server $issuer -m $email
     echo "e-mail="$email
-## continue check 
+# continue check 
     ;;&
 
-
-## issue certificates
-    1|2|3)  
+    1|2|3|"")  
     echo "server="$issuer
     echo "renew days="$days
 
@@ -132,12 +146,12 @@ case $answer in
 echo -e "Please input your domain name(without www.): \c"
 read domain
 
-# get ssl certs
+# issue certificates
 ~/.acme.sh/acme.sh --issue --dns dns_cf \
     --server $issuer --days $days \
 	-d $domain -d www.$domain
 
-# install ssl certs to root/cert-files
+# install certificates to ~/cert-files
 mkdir ~/cert-files/$domain -p
 ~/.acme.sh/acme.sh --install-cert -d $domain \
     --cert-file      ~/cert-files/$domain/cert.pem  \
@@ -146,6 +160,7 @@ mkdir ~/cert-files/$domain -p
 
 #                                                         \
 #    --reloadcmd "systemctl reload nginx.service"
+
 
 cat << EOF
 
@@ -171,8 +186,7 @@ acme.sh --remove -d <domain-name>
 EOF
 
 
-
-## go exit
+# go exit
     ;;
 
     *)
