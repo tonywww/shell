@@ -13,7 +13,7 @@ case $answer in
 #### install Caddy2
 
 ## input domain
-echo -e "Please input your domain name: \c"
+echo -e "Please input your domain name (without www.): \c"
 read domain
 
 echo -e "Please input your Google reCAPCHA Key: \c"
@@ -49,70 +49,57 @@ cat > /etc/caddy/Caddyfile << EOF
 # domain name.
 #:80
 
-#### sniproxy change port
-#   {
-#    http_port  81
-#    https_port 444
-#   }
+    {
+# set defalut CA to ZeroSSL
+        acme_ca https://acme.zerossl.com/v2/DV90
+        email   admin@$domain
+# sniproxy change port
+#        http_port  81
+#        https_port 444
+    }
 
 
+## $domain config START
 
-# $domain config START
 #http://$domain, https://$domain {
-
 $domain {
-
 
 # Set this path to your site's directory.
     root * /www/website/
 
+
 # Enable the static file server.
     file_server
 
+# set /dl browser
     @dl {
-       path /dl
-       path /dl/
-      }
+        path /dl /dl/
+    }
     file_server @dl browse
+
 
 # Another common task is to set up a reverse proxy:
 # reverse_proxy localhost:8080
 
-#filebrowser
+# filebrowser v2
     @file {
-       path /file
-       path /file/*
-      }
+        path /file /file/*
+    }
     reverse_proxy @file localhost:8089
+
 
 # Or serve a PHP site through php-fpm:
 # php_fastcgi localhost:9000
-
-#    php_fastcgi unix//run/php/php7.0-fpm.sock
-####php 7.0 install
-## apt-get install php-fpm
-
-
-#### sniproxy librespeed test port forward
-#    @https {
-#        protocol https
-#        path /speed
-#       }
-#    redir @https https://{host}:444/speed/
-
-##    @http {
-##        protocol http
-##        path /speed
-##       }
-##    redir @http http://{host}:81/speed/
+    php_fastcgi unix//run/php/php7.0-fpm.sock
+#### php 7.0 install: apt-get install php-fpm
 
 
    }
-# $domain config END
+## $domain config END
 
 
 
-#### syncthing
+## syncthing
 #https://$domain:your-port {
 #    reverse_proxy localhost:8384
 #   }
@@ -225,5 +212,7 @@ EOF
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
