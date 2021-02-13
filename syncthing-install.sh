@@ -17,9 +17,9 @@ echo "deb https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.li
 
 
 # Update and install syncthing:
-apt-get install apt-transport-https -y
-apt-get update -y
-apt-get install syncthing -y
+apt install apt-transport-https -y
+apt update -y
+apt install syncthing -y
 
 # create syncthing user
 useradd -m syncthing

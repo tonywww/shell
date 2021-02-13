@@ -9,8 +9,8 @@ case $answer in
 
 
 ## install openvpn
-apt-get update -y
-apt-get install openvpn gzip -y
+apt update -y
+apt install openvpn gzip -y
 
 # publice IP rules for OpenVPN client
 #ip rule add from $(ip route get 1 | grep -Po '(?<=src )(\S+)') table 128

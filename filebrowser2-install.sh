@@ -19,7 +19,7 @@ read secret
 
 # download filebroswer
     if [ ! -x "/usr/bin/curl" ]; then 
-       apt-get update -y && apt-get install curl -y
+       apt update -y && apt install curl -y
     fi
 curl -fsSL https://filebrowser.org/get.sh | bash
 

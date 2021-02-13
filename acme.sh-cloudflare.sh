@@ -60,7 +60,7 @@ EOF
 
 # install acmd.sh
     if [ ! -x "/usr/bin/curl" ]; then 
-       apt-get update -y && apt-get install curl -y
+       apt update -y && apt install curl -y
     fi
 curl https://get.acme.sh | sh
 

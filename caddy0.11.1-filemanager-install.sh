@@ -67,7 +67,7 @@ $domain {
 
 #    fastcgi / /run/php/php7.0-fpm.sock php
 ####php 7.0 install
-## apt-get install php-fpm
+## apt install php-fpm
 
 
 #### sniproxy librespeed test port forward

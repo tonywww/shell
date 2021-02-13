@@ -26,14 +26,14 @@ read secret
 ## download Caddy2
 
     if [ ! -x "/usr/bin/curl" ]; then 
-       apt-get update -y && apt-get install curl -y
+       apt update -y && apt install curl -y
     fi
 
-apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+apt install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
-apt-get update -y
-apt-get install caddy
+apt update -y
+apt install caddy
 
 
 ## create /etc/caddy/Caddyfile
@@ -91,7 +91,7 @@ $domain {
 # Or serve a PHP site through php-fpm:
 # php_fastcgi localhost:9000
     php_fastcgi unix//run/php/php7.0-fpm.sock
-#### php 7.0 install: apt-get install php-fpm
+#### php 7.0 install: apt install php-fpm
 
 
 }
