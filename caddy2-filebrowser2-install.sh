@@ -94,7 +94,7 @@ $domain {
 #### php 7.0 install: apt-get install php-fpm
 
 
-   }
+}
 ## $domain config END
 
 
