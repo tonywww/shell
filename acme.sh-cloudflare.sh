@@ -30,10 +30,8 @@ EOF
     echo "continue..."
 
 # get cloudflare token & zone_id and domain name
-    echo -e "Please input your CloudFlare API token: \c"
-    read cf_token
-    echo -e "Please input your CloudFlare ZONE ID: \c"
-    read cf_zone_id
+    read -p "Please input your CloudFlare API token: " cf_token
+    read -p "Please input your CloudFlare ZONE ID: " cf_zone_id
 
 # make choice
 cat << EOF
@@ -69,7 +67,7 @@ export CF_Token="$cf_token"
 export CF_Zone_ID="$cf_zone_id"
 
 # set default server
-~/.acme.sh/acme.sh --set-default-ca  --server $server
+acme.sh --set-default-ca  --server $server
 
 
     ;;
@@ -100,77 +98,111 @@ cat << EOF
 1. issue ZeroSSL 90 days certificates (Default)*
 2. issue BuyPass 180 days certificates
 3. issue Let’s encrypt 90 days certificates
-4. exit
+4. issue ZeroSSL 90 days WILDCARD certificates
+5. exit
 
 EOF
 
 # choose issuer
-read -p "Please choose your option: [1-4]" answer3
+read -p "Please choose your option: [1-5]" answer3
 case $answer3 in  
 
-    1|"")  
+    1|"")
     echo "continue to issue ZeroSSL certificates..."
     issuer="zerossl"
     days="60"
 # continue check 
     ;;&
 
-    2)  
+    2)
     echo "continue to issue BuyPass certificates..."
     issuer="buypass"
     days="150"
 # continue check 
     ;;&
 
-    3)  
+    3)
     echo "continue to issue Let’s encrypt certificates..."
     issuer="letsencrypt"
     days="60"
 # continue check 
     ;;&
 
+    4)
+    echo "continue to issue ZeroSSL WILDCARD certificates..."
+    issuer="zerossl"
+    days="60"
+# continue check 
+    ;;&
+
 # register account
-    1|2|"")  
-    echo -e "Please input your e-mail to register $issuer: \c"
-    read email
-    ~/.acme.sh/acme.sh --register-account --server $issuer -m $email
+    1|2|4|"")
+    read -p "Please input your e-mail to register $issuer: " email
+    acme.sh --register-account --server $issuer -m $email
     echo "e-mail="$email
 # continue check 
     ;;&
 
-    1|2|3|"")  
+    1|2|3|4|"")
     echo "server="$issuer
     echo "renew days="$days
+# continue check 
+    ;;&
 
+    1|2|3|"")
 # get domain name
-echo -e "Please input your domain name(without www.): \c"
-read domain
+read -p "Please input your domain name(without www.): " domain
 
 # issue certificates
-~/.acme.sh/acme.sh --issue --dns dns_cf \
+acme.sh --issue --dns dns_cf \
     --server $issuer --days $days \
 	-d $domain -d www.$domain
 
-# install certificates to ~/cert-files
-mkdir ~/cert-files/$domain -p
-~/.acme.sh/acme.sh --install-cert -d $domain \
-    --cert-file      ~/cert-files/$domain/cert.pem  \
-    --key-file       ~/cert-files/$domain/key.pem  \
-    --fullchain-file ~/cert-files/$domain/fullchain.pem 
+# install certificates to /etc/ssl/acme/
+mkdir /etc/ssl/acme/$domain -p
+acme.sh --install-cert -d $domain \
+    --reloadcmd "systemctl reload caddy.service" \
+    --cert-file      /etc/ssl/acme/$domain/cert.pem  \
+    --key-file       /etc/ssl/acme/$domain/key.pem  \
+    --fullchain-file /etc/ssl/acme/$domain/fullchain.pem 
+# continue check 
+    ;;&
 
-#                                                         \
-#    --reloadcmd "systemctl reload nginx.service"
+    4)
+# get WILDCARD domain name
+read -p "Please input your WINDCARD domain name(without www.): " domain
 
+# issue WILDCARD certificates
+acme.sh --issue --dns dns_cf \
+    --server $issuer --days $days \
+	-d $domain -d '*.$domain'
+
+# install certificates to /etc/ssl/acme/
+mkdir /etc/ssl/acme/*.$domain -p
+acme.sh --install-cert -d $domain \
+    --reloadcmd "systemctl reload caddy.service" \
+    --cert-file      /etc/ssl/acme/*.$domain/cert.pem  \
+    --key-file       /etc/ssl/acme/*.$domain/key.pem  \
+    --fullchain-file /etc/ssl/acme/*.$domain/fullchain.pem 
+
+domain=*.$domain
+# continue check 
+    ;;&
+
+    1|2|3|4|"")
+# change user & group, add read permission
+chown nobody:nogroup /etc/ssl/acme/$domain -R
+chmod +r /etc/ssl/acme/$domain/key.pem
 
 cat << EOF
 
-$issuer certificates for $domain is installed!
+$issuer certificates for $domain is installed in "/etc/ssl/acme/$domain/" !
 The certificates will be automatically renewed every $days days.
 
-ls ~/cert-files/$domain -lshF
+ls -lshF /etc/ssl/acme/$domain
 EOF
 
-ls ~/cert-files/$domain -lshF
+ls -lshF /etc/ssl/acme/$domain
 
 cat << EOF
 
@@ -192,5 +224,7 @@ EOF
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
