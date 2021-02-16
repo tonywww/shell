@@ -13,14 +13,9 @@ case $answer in
 #### install Caddy2
 
 ## input domain
-echo -e "Please input your domain name (without www.): \c"
-read domain
-
-echo -e "Please input your Google reCAPCHA Key: \c"
-read key
-
-echo -e "Please input your Google reCAPCHA Secret: \c"
-read secret
+read -p "Please input your domain name (without www.): " domain
+read -p "Please input your Google reCAPCHA Key: " key
+read -p "Please input your Google reCAPCHA Secret: " secret
 
 
 ## download Caddy2
@@ -47,15 +42,20 @@ cat > /etc/caddy/Caddyfile << EOF
 # sure your domain's A/AAAA DNS records are properly pointed to
 # this machine's public IP, then replace the line below with your
 # domain name.
-#:80
 
+
+# Global options
     {
 # set defalut CA to ZeroSSL
         acme_ca https://acme.zerossl.com/v2/DV90
         email   admin@$domain
-# sniproxy change port
+# work with sniproxy change port
 #        http_port  81
 #        https_port 444
+# auto https off
+#        auto_https off
+# auto http redirect to https off
+#        auto_https disable_redirects
     }
 
 
@@ -63,6 +63,10 @@ cat > /etc/caddy/Caddyfile << EOF
 
 #http://$domain, https://$domain {
 $domain {
+
+#    bind 127.0.0.1
+#    tls /etc/ssl/acme/your-domain/cert.pem /etc/ssl/acme/your-domain/key.pem
+
 
 # Set this path to your site's directory.
     root * /www/website/
@@ -131,9 +135,12 @@ EOF
 echo "This is a test file for file browser" >> /www/filebrowser/test-filebrowser.txt
 echo "This is a test file for /share" >> /www/filebrowser/share/test-share.txt
 echo "This is a test file for /dl" >> /www/filebrowser/dl/test-dl.txt
+
 chown -R www-data:www-data /www
-chmod -R 555 /www
-chmod -R 757 /www/filebrowser
+#chmod -R 555 /www
+#chmod -R 757 /www/filebrowser
+chmod -R 750 /www
+
 
 
 #### install filebroswer
@@ -157,16 +164,17 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
 
 # add user tony	
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
+chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
 cat > /lib/systemd/system/filebrowser.service << EOF
 [Unit]
-Description=File browser
+Description=File browser v2
 After=network.target
 
 [Service]
-;User=www-data
-;Group=www-data
+User=www-data
+Group=www-data
 ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
 
 [Install]

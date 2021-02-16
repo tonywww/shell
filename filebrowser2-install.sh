@@ -11,10 +11,8 @@ case $answer in
 
 
 ## input key & secret
-echo -e "Please input your Google reCAPCHA Key: \c"
-read key
-echo -e "Please input your Google reCAPCHA Secret: \c"
-read secret
+read -p "Please input your Google reCAPCHA Key: " key
+read -p "Please input your Google reCAPCHA Secret: " secret
 
 
 # download filebroswer
@@ -39,22 +37,28 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
 
 # add user tony	
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
+chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
 cat > /lib/systemd/system/filebrowser.service << EOF
 [Unit]
-Description=File browser
+Description=File browser v2
 After=network.target
 
 [Service]
-;User=www-data
-;Group=www-data
+User=www-data
+Group=www-data
 ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
 
 [Install]
 WantedBy=multi-user.target
 
 EOF
+
+mkdir -p /www/filebrowser/dl
+mkdir -p /www/filebrowser/share
+chown -R www-data:www-data /www
+chmod -R 750 /www
 
 
 systemctl daemon-reload
@@ -89,5 +93,7 @@ EOF
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
