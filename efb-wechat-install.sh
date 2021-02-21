@@ -1,8 +1,13 @@
 #!/bin/bash
 
-echo ""
-#read -p "Are you sure to install EH Forwarder Bot(WeChat & QQ for Telegram)? [y/n} " answer
-read -p "Are you sure to install EH Forwarder Bot(WeChat for Telegram)? [y/n} " answer
+cat << EOF
+#
+# efb-wechat-install.sh
+# This shell scipts will install EH Forwarder Bot (WeChat for Telegram).
+#
+EOF
+
+read -p "Please press \"y\" to continue: " answer
 
 case $answer in
     Y|y)
@@ -96,11 +101,16 @@ flags:
     delete_on_edit: true
 EOF
 
+
+
+## generate UUID for coolq-token
+#coolq-token=$(cat /proc/sys/kernel/random/uuid | sed 's/-//g')
+#
 #cat > /etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml << EOF
 #Client: CoolQ
 #CoolQ:
 #    type: HTTP
-#    access_token: 6844ea40baf34eb48e76d302b2692f82
+#    access_token: $coolq-token
 #     # keep secret, must be the same with CoolQ
 #    api_root: http://172.17.0.2:5700/  # CoolQ-http-API address (remote or local)
 #    host: 172.17.0.1                   # efb-qq-slave listen address
@@ -110,10 +120,6 @@ EOF
 #        upload_to_smms: true           # upload pic to sm.ms
 #
 #EOF
-
-## replace radom access_token
-#access_token=cat dbus-uuidgen
-#sed -i "s/6844ea40baf34eb48e76d302b2692f82/$access_token/" /etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml
 
 
 ## create /etc/systemd/system/efb.service
@@ -165,7 +171,9 @@ systemctl status efb.service --no-pager
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
 
 
