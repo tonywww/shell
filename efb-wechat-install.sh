@@ -30,7 +30,7 @@ apt install -y make build-essential libssl-dev zlib1g-dev \
         xz-utils tk-dev ffmpeg libmagic-dev libwebp-dev
 
 # install Python 3.6.9
-cd
+cd ~
 
 #wget -O Python-3.6.9.tgz "https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz"
 #tar -zxvf Python-3.6.9.tgz
@@ -40,6 +40,7 @@ cd
 
 wget -O Python-3.9.2.tgz "https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz"
 tar -zxvf Python-3.9.2.tgz
+rm -rf ~/Python-3.9.2.tgz
 cd Python-3.9.2
 ./configure --enable-optimizations
 make -j $(nproc) && make install
@@ -54,19 +55,20 @@ pip3 install efb-wechat-slave
 #pip3 install efb-qq-slave
 
 
-# create default files
-mkdir -p /etc/ehforwarderbot/profiles/default/blueset.telegram
-mkdir -p /etc/ehforwarderbot/profiles/default/blueset.wechat
-#mkdir -p /etc/ehforwarderbot/profiles/default/milkice.qq
+# create default config files
 
-cat > /etc/ehforwarderbot/profiles/default/config.yaml << EOF
+mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/blueset.telegram
+mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/blueset.wechat
+#mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/milkice.qq
+
+cat > /usr/local/etc/ehforwarderbot/profiles/default/config.yaml << EOF
 master_channel: blueset.telegram
 slave_channels:
 - blueset.wechat
 #- milkice.qq
 EOF
 
-cat > /etc/ehforwarderbot/profiles/default/blueset.telegram/config.yaml << EOF
+cat > /usr/local/etc/ehforwarderbot/profiles/default/blueset.telegram/config.yaml << EOF
 ##################
 # Required items #
 ##################
@@ -102,7 +104,7 @@ flags:
 # Refer to relevant sections afterwards for details.
 EOF
 
-cat > /etc/ehforwarderbot/profiles/default/blueset.wechat/config.yaml << EOF
+cat > /usr/local/etc/ehforwarderbot/profiles/default/blueset.wechat/config.yaml << EOF
 flags:
     delete_on_edit: true
 EOF
@@ -112,7 +114,7 @@ EOF
 ## generate UUID for coolq-token
 #coolq-token=$(cat /proc/sys/kernel/random/uuid | sed 's/-//g')
 #
-#cat > /etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml << EOF
+#cat > /usr/local/etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml << EOF
 #Client: CoolQ
 #CoolQ:
 #    type: HTTP
@@ -137,13 +139,20 @@ Wants=network.target
 Documentation=https://github.com/blueset/ehForwarderBot
 
 [Service]
+User=nobody
+#CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+#AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+#NoNewPrivileges=true
+
 Type=simple
-Environment='EFB_PROFILE=default' 'LANG=zh_CN.UTF-8' 'PYTHONIOENCODING=utf_8' 'EFB_DATA_PATH=/etc/ehforwarderbot'
+Environment='EFB_PROFILE=default' 'LANG=zh_CN.UTF-8' 'PYTHONIOENCODING=utf_8' 'EFB_DATA_PATH=/usr/local/etc/ehforwarderbot'
 ExecStart=/usr/local/bin/ehforwarderbot --verbose --profile=${EFB_PROFILE}
 Restart=on-abort
 KillSignal=SIGINT
 #StandardOutput=journal+file:/var/log/efb.debug
 #StardardError=journal+file:/var/log/efb.error
+StandardOutput=file:/var/log/efb.debug
+StardardError=file:/var/log/efb.error
 
 [Install]
 WantedBy=multi-user.target
@@ -153,10 +162,10 @@ EOF
 
 
 
-#ehforwarderbot --profile=/etc/ehforwarderbot/profiles/default
+#ehforwarderbot --profile=/usr/local/etc/ehforwarderbot/profiles/default
 
 # after login, press "Ctrl+C", then run the follwing commands:
-#systemctl enable efb.service
+systemctl enable efb.service
 systemctl restart efb.service
 cat << EOF
 ==========================================================================
@@ -166,8 +175,8 @@ Please wait for efb-wechat starting...
 EOF
 sleep 5s
 
-systemctl status efb.service --no-pager
-#journalctl -u efb.service -o cat
+#systemctl status efb.service --no-pager
+journalctl -u efb.service -o cat --no-pager -n 50
 
 
 
