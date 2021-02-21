@@ -13,7 +13,7 @@ case $answer in
     Y|y)
     echo "continue..."
 
-    if [ ! -x "/bin/tar" ]; then 
+    if ! command -v tar >/dev/null 2>&1; then
        apt update -y && apt install tar -y
     fi
 
@@ -58,7 +58,7 @@ EOF
 
 systemctl daemon-reload
 systemctl enable cloudreve
-systemctl start cloudreve
+systemctl restart cloudreve
 systemctl status cloudreve --no-pager
 
 cat /var/www/cloudreve/cloudreve-install-info.txt

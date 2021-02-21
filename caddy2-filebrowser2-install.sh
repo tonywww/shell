@@ -26,11 +26,9 @@ read -p "Please input your Google reCAPCHA Secret: " secret
 
 
 ## download Caddy2
-
-    if [ ! -x "/usr/bin/curl" ]; then 
+    if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
-
 apt install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
@@ -160,6 +158,9 @@ chmod -R 750 /var/www
 #### install filebroswer
 
 # download filebroswer
+    if ! command -v curl >/dev/null 2>&1; then
+       apt update -y && apt install curl -y
+    fi
 curl -fsSL https://filebrowser.org/get.sh | bash
 
 # config init

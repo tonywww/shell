@@ -1,8 +1,14 @@
 #!/bin/bash
 
+cat << EOF
+#
+# syncthing-install.sh
+# This shell scipts will install Syncthing as a service.
+#
+#
+EOF
 
-echo ""
-read -p "Do you want to install Syncthing as a service? [y/n} " answer
+read -p "Please press \"y\" to continue: " answer
 
 case $answer in
     Y|y)
@@ -10,6 +16,9 @@ case $answer in
 
 
 # Add the release PGP keys:
+    if ! command -v curl >/dev/null 2>&1; then
+       apt update -y && apt install curl -y
+    fi
 curl -s https://syncthing.net/release-key.txt | apt-key add -
 
 # Add the "stable" channel to your APT sources:
@@ -40,5 +49,7 @@ systemctl status syncthing@syncthing.service --no-pager
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0

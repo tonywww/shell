@@ -22,7 +22,7 @@ read -p "Please input your Google reCAPCHA Secret: " secret
 
 
 # download filebroswer
-    if [ ! -x "/usr/bin/curl" ]; then 
+    if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
 curl -fsSL https://filebrowser.org/get.sh | bash
