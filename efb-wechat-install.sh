@@ -129,6 +129,7 @@ EOF
 #
 #EOF
 
+chmod -R 757 /usr/local/etc/ehforwarderbot
 
 ## create /etc/systemd/system/efb.service
 cat > /etc/systemd/system/efb.service << EOF
