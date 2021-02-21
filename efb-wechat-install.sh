@@ -29,18 +29,16 @@ apt install -y make build-essential libssl-dev zlib1g-dev \
         wget curl llvm libncurses5-dev  libncursesw5-dev \
         xz-utils tk-dev ffmpeg libmagic-dev libwebp-dev
 
-# install Python 3.6.9
+# install Python
 cd ~
-
 #wget -O Python-3.6.9.tgz "https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz"
 #tar -zxvf Python-3.6.9.tgz
 #cd Python-3.6.9
 #./configure
 #make -j8 && make install
-
 wget -O Python-3.9.2.tgz "https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz"
 tar -zxvf Python-3.9.2.tgz
-rm -rf ~/Python-3.9.2.tgz
+rm ~/Python-3.9.2.tgz
 cd Python-3.9.2
 ./configure --enable-optimizations
 make -j $(nproc) && make install
@@ -201,6 +199,9 @@ exit 0
 #pip3 install -U efb-wechat-slave
 #pip3 install -U efb-qq-slave
 
+
+# EH Forwarder Bot help
+# https://ehforwarderbot.readthedocs.io/zh_CN/latest/
 
 # EFB Telegram Master help
 # https://github.com/blueset/efb-telegram-master/blob/master/readme_translations/zh_CN.rst
