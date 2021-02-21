@@ -1,7 +1,13 @@
 #!/bin/bash
 
-echo ""
-echo "Before install Caddy v0.11.1(with filemanager), make sure your domain has pointed to this VPS's IP."
+cat << EOF
+#
+# caddy0.11.1-filemanager-install.sh
+# This shell scipts will install Caddy v0.11.1 with FileManager(Filebroswer).
+#
+# Before the installation, please make sure your domain has pointed to this VPS's IP."
+#
+EOF
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -12,8 +18,7 @@ case $answer in
 # install Caddy
 
 ## input domain
-echo -e "Please input your domain name: \c"
-read domain
+read -p "Please input your domain name (without www.): " domain
 
 ## download Caddy
 
@@ -23,29 +28,49 @@ read domain
 #cp /usr/local/bin/caddy /usr/local/bin/caddy_no-filemanager
 
 ## download caddy v0.11.1 with filemanager
-wget -O /usr/local/bin/caddy_filemanager_v0.11.1 "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
-cp /usr/local/bin/caddy_filemanager_v0.11.1 /usr/local/bin/caddy
-chmod +x /usr/local/bin/caddy*
+#wget -O /usr/local/bin/caddy_filemanager_v0.11.1 "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
+#cp /usr/local/bin/caddy_filemanager_v0.11.1 /usr/local/bin/caddy
+wget -O /usr/local/bin/caddy "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
+chmod +x /usr/local/bin/caddy
 
 ## create etc & ssl path
 mkdir /etc/caddy
-chown -R root:www-data /etc/caddy
-mkdir -m 0770 /etc/ssl/caddy
-chown -R www-data:root /etc/ssl/caddy
 
 ## create /etc/caddy/Caddyfile
 cat > /etc/caddy/Caddyfile << EOF
-## cloudflare SSL (Full strict)
-# http://$domain, https://$domain {
+# Caddy v0.11.1 config file
 
+# force whole site http to https
+# (only work with sniproxy and xray/v2ray )
+# sniproxy redirect http 80 to localhost 82
+# xray/v2ray TLS fallback to http localhost 81
+#    :82 {
+#        bind 127.0.0.1
+#        redir https://{host}{uri}
+#    }
+
+
+## $domain config START
+
+#http://$domain, https://$domain {
 $domain {
+
+#    bind 127.0.0.1
     tls admin@$domain
     gzip
-    root /www/website/
+    root /var/www/$domain/
     browse /dl/
+#    basicauth /dl/ username password
+
+    timeouts {
+        read none
+        write none
+        header none
+        idle 5m
+    }
 
 
-    filemanager /file www/filebrowser/ {
+    filemanager /file var/www/filebrowser/ {
         database /etc/ssl/caddy/filemanager/$domain.db
         locale         zh-cn
         allow_commands false
@@ -54,7 +79,7 @@ $domain {
 ##        alternative_recaptcha
        }
 
-    filemanager /share www/filebrowser/share/ {
+    filemanager /share var/www/filebrowser/share/ {
         database /etc/ssl/caddy/filemanager/$domain-share.db
         locale         zh-cn
         allow_commands false
@@ -66,47 +91,57 @@ $domain {
 
 
 #    fastcgi / /run/php/php7.0-fpm.sock php
-####php 7.0 install
-## apt install php-fpm
-
-
-#### sniproxy librespeed test port forward
-#    redir 302 {
-#	if {scheme} is https
-#	/speed https://{host}:444/speed/
-#       }
-#    redir 302 {
-#	if {scheme} is http
-#	/speed http://{host}:81/speed/
-#       }
+#    fastcgi / 127.0.0.1:9000 php
+#### php 7.0 install: apt install php-fpm
 
 
 }
+
+## $domain config END
+
+
+
 EOF
 
+## create caddy directories
+chown -R www-data:www-data /etc/caddy
 chmod 644 /etc/caddy/Caddyfile
 
+mkdir -p /etc/ssl/caddy/filemanager
+chown -R www-data:www-data /etc/ssl/caddy
+chmod -R 740 /etc/ssl/caddy
+
+#chown -R root:www-data /etc/caddy
+#mkdir -m 0770 /etc/ssl/caddy
+#chown -R www-data:root /etc/ssl/caddy
+
 ## create file browser directories
-mkdir -p /www/filebrowser/share
-mkdir -p /www/filebrowser/dl
+mkdir -p /var/www/filebrowser/share
+mkdir -p /var/www/filebrowser/dl
 
 ## create website directories
-mkdir /www/website
-ln -s /www/filebrowser/dl /www/website/dl
+mkdir -p /var/www/$domain
+rm -r /var/www/$domain/dl
+ln -s /var/www/filebrowser/dl /var/www/$domain/dl
 
 ## create default files
-cat > /www/website/index.html << EOF
+
+    if [ -f "/var/www/$domain/index.html" ]; then
+        mv /var/www/$domain/index.html /var/www/$domain/index_backup.html
+        echo "Found previous index.html, renamed to /var/www/$domain/index_backup.html"
+    fi
+
+cat > /var/www/$domain/index.html << EOF
 <font size="8" face="Comic Sans MS"><center>
 -- Welcome to $domain! --
 </center></font>
 EOF
 
-echo "This is a test file for file browser" >> /www/filebrowser/test-filebrowser.txt
-echo "This is a test file for /share" >> /www/filebrowser/share/test-share.txt
-echo "This is a test file for /dl" >> /www/filebrowser/dl/test-dl.txt
-chown -R www-data:www-data /www
-chmod -R 555 /www
-chmod -R 757 /www/filebrowser
+echo "This is a test file for file browser" >> /var/www/filebrowser/test-filebrowser.txt
+echo "This is a test file for /share" >> /var/www/filebrowser/share/test-share.txt
+echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
+chown -R www-data:www-data /var/www
+chmod -R 750 /var/www
 
 ## original caddy.service file
 # For Debian9, the file \"/etc/systemd/system/caddy.service\" need to modified to:
@@ -159,8 +194,8 @@ ProtectSystem=full
 ;   This merely retains r/w access rights, it does not add any new. Must still be writable on the host!
 ReadWriteDirectories=/etc/ssl/caddy
 
-; Allow Caddy File Browser to access the directory
-ReadWriteDirectories=/www/filebrowser
+# Allow Caddy File Browser to access the directory
+#ReadWriteDirectories=
 
 ; The following additional security directives only work with systemd v229 or later.
 ; They further restrict privileges that can be gained by caddy. Uncomment if you like.
@@ -174,8 +209,8 @@ WantedBy=multi-user.target
 
 EOF
 
-chown root:root /etc/systemd/system/caddy.service
-chmod 644 /etc/systemd/system/caddy.service
+#chown root:root /etc/systemd/system/caddy.service
+#chmod 644 /etc/systemd/system/caddy.service
 
 ## load Caddy as a system service & autorun
 systemctl daemon-reload
@@ -191,18 +226,19 @@ systemctl status caddy.service --no-pager
 cat << EOF
 
 =======================================================================
-Caddy v0.11.1 path   : /usr/local/bin/caddy_filemanager_v0.11.1
+Caddy v0.11.1 path   : /usr/local/bin/caddy
 Caddyfile            : /etc/caddy/Caddyfile
-Web service          : $domain       --> /www/website
-Caddy browse         : $domain/dl    --> /www/filebroswer/dl
+Web service          : $domain       --> /var/www/website
+Caddy browse         : $domain/dl    --> /var/www/filebroswer/dl
 
-Filebrowser          : $domain/file  --> /www/filebroswer
-Filebrowser share    : $domain/share --> /www/filebroswer/share
+Filebrowser          : $domain/file  --> /var/www/filebroswer
+Filebrowser share    : $domain/share --> /var/www/filebroswer/share
 =======================================================================
-Filebrowser default username & password : admin  admin
-(Please login http://$domain/file and change the password ASAP!)
-
 EOF
+echo -n "Filebrowser default username & password: "
+echo -e "\033[5;46;30m"admin admin"\033[0m"
+echo "(Please login http://$domain/file and change the password ASAP!)"
+echo ""
 
 
 ## go exit
@@ -213,5 +249,7 @@ EOF
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
