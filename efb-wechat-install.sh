@@ -31,12 +31,18 @@ apt install -y make build-essential libssl-dev zlib1g-dev \
 
 # install Python 3.6.9
 cd
-wget -O Python-3.6.9.tgz "https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz"
-tar -zxvf Python-3.6.9.tgz
-cd Python-3.6.9
-./configure
-make -j8
-make install
+
+#wget -O Python-3.6.9.tgz "https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz"
+#tar -zxvf Python-3.6.9.tgz
+#cd Python-3.6.9
+#./configure
+#make -j8 && make install
+
+wget -O Python-3.9.2.tgz "https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz"
+tar -zxvf Python-3.9.2.tgz
+cd Python-3.9.2
+./configure --enable-optimizations
+make -j $(nproc) && make install
 
 # pip3 upgrade
 pip3.6 install --upgrade pip
