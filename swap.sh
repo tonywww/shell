@@ -1,5 +1,12 @@
 #!/bin/bash
 
+cat << EOF
+#
+# swap.sh
+# This shell scipts will create 512M SWAP file.
+#
+EOF
+
 echo ""
 free -h
 echo ""
@@ -28,7 +35,7 @@ echo ""
 swapon
 ls -lh /var/swapfile
 echo ""
-echo "512M SWAp file has been created!"
+echo "512M SWAP file has been created!"
 
 
 
@@ -38,5 +45,7 @@ echo "512M SWAp file has been created!"
     *)  
     echo "exit"  
     ;;  
+
 esac  
+
 exit 0

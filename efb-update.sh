@@ -1,5 +1,12 @@
 #!/bin/bash
 
+cat << EOF
+#
+# efb-update.sh
+# This shell scipts will update EH Forwarder Bot (WeChat for Telegram).
+#
+EOF
+
 #pip3 show ehforwarderbot
 #pip3 show efb-telegram-master
 #pip3 show efb-wechat-slave
@@ -8,12 +15,13 @@
 echo  "The current versions are:"
 pip3 list | grep -E "efb-|ehforwarderbot"
 echo ""
-echo "PLease wait me to search..."
+echo "Seaching new versions..."
 pip3 list -o | grep -E "efb-|ehforwarderbot"
 echo ""
-echo "The above are the new versions:"
+echo "The above are the newer versions."
 echo ""
-read -p "Are you sure to update EH Forwarder Bot(WeChat & QQ for Telegram)？ [y/n} " answer
+
+read -p "Please press \"y\" to continue update: " answer
 
 case $answer in
     Y|y)
@@ -34,5 +42,7 @@ systemctl status efb --no-pager
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0

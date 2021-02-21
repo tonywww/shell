@@ -1,5 +1,19 @@
 #!/bin/bash
 
+cat << EOF
+#
+# bbr-ls-colour-install.sh
+# This shell scipts will enable BBR and change ls default colourful.
+#
+EOF
+
+read -p "Please press \"y\" to continue: " answer
+
+case $answer in
+    Y|y)
+    echo "continue..."
+
+
 
 ## change Debian vi/vim colour
 sed -i 's/\"syntax on/syntax on/' /etc/vim/vimrc
@@ -38,11 +52,10 @@ uname -a
 
 echo "=========================================================="
 echo ""
-#echo -e "Is linux version >=4.9.x? \c"
 
-read -p "Is linux version >=4.9.x? [y/n]" answer
+read -p "Is linux version >=4.9.x? [y/n]" answer1
 
-case $answer in
+case $answer1 in
     Y|y)
     echo "continue..."
 
@@ -84,4 +97,19 @@ echo "BBR has aleady opened!"
 echo ""
 
 fi
+
+
+
+## go exit
+    ;;
+
+
+## end
+    *)
+    echo "exit"
+    ;;
+
+esac
+
+exit 0
 

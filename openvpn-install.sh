@@ -1,7 +1,13 @@
 #!/bin/bash
 
-echo ""
-read -p "Do you want to install OpenVPN (client & server) service? [y/n]" answer
+cat << EOF
+#
+# openvpn-install.sh
+# This shell scipts will install OpenVPN (client & server) service.
+#
+EOF
+
+read -p "Please press \"y\" to continue: " answer
 
 case $answer in
     Y|y)
@@ -197,5 +203,7 @@ EOF
     *)
     echo "exit"
     ;;
+
 esac
+
 exit 0
