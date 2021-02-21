@@ -57,7 +57,7 @@ EOF
         esac
 
 # install acmd.sh
-    if [ ! -x "/usr/bin/curl" ]; then 
+    if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
 curl https://get.acme.sh | sh
@@ -178,14 +178,14 @@ acme.sh --issue --dns dns_cf \
 	-d $domain -d '*.$domain'
 
 # install certificates to /etc/ssl/acme/
-mkdir /etc/ssl/acme/*.$domain -p
+mkdir /etc/ssl/acme/wildcard.$domain -p
 acme.sh --install-cert -d $domain \
     --reloadcmd "systemctl reload caddy.service" \
-    --cert-file      /etc/ssl/acme/*.$domain/cert.pem  \
-    --key-file       /etc/ssl/acme/*.$domain/key.pem  \
-    --fullchain-file /etc/ssl/acme/*.$domain/fullchain.pem 
+    --cert-file      /etc/ssl/acme/wildcard.$domain/cert.pem  \
+    --key-file       /etc/ssl/acme/wildcard.$domain/key.pem  \
+    --fullchain-file /etc/ssl/acme/wildcard.$domain/fullchain.pem 
 
-domain=*.$domain
+domain=wildcard.$domain
 # continue check 
     ;;&
 
