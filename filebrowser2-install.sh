@@ -76,7 +76,7 @@ chmod -R 750 /car/www
 
 systemctl daemon-reload
 systemctl enable filebrowser
-systemctl start filebrowser
+systemctl restart filebrowser
 systemctl status filebrowser --no-pager
 
 domain="your-domain.com"
