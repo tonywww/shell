@@ -1,8 +1,15 @@
 #!/bin/bash
 
-echo ""
-echo "Before install Caddy v2 & Filebroswer v2, make sure your domain has pointed to this VPS's IP."
-echo "If you want to use Google reCAPCHA, please prepair the key and secret."
+cat << EOF
+#
+# caddy2-filebrowser2-install.sh
+# This shell scipts will install Caddy v2 & Filebroswer v2.
+#
+# Before the installation, please make sure your domain has pointed to this VPS's IP."
+# For Google reCAPCHA, please have the key and secret first."
+#
+EOF
+
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
@@ -69,7 +76,7 @@ $domain {
 
 
 # Set this path to your site's directory.
-    root * /www/website/
+    root * /var/www/$domain/
 
 
 # Enable the static file server.
@@ -118,28 +125,35 @@ EOF
 chmod 644 /etc/caddy/Caddyfile
 
 ## create file browser directories
-mkdir -p /www/filebrowser/share
-mkdir -p /www/filebrowser/dl
+mkdir -p /var/www/filebrowser/share
+mkdir -p /var/www/filebrowser/dl
 
 ## create website directories
-mkdir /www/website
-ln -s /www/filebrowser/dl /www/website/dl
+mkdir -p /var/www/$domain
+rm -r /var/www/$domain/dl
+ln -s /var/www/filebrowser/dl /var/www/$domain/dl
 
 ## create default files
-cat > /www/website/index.html << EOF
+
+    if [ -f "/var/www/$domain/index.html" ]; then
+        mv /var/www/$domain/index.html /var/www/$domain/index_backup.html
+        echo "Found previous index.html, renamed to /var/www/$domain/index_backup.html"
+    fi
+
+cat > /var/www/$domain/index.html << EOF
 <font size="8" face="Comic Sans MS"><center>
 -- Welcome to $domain! --
 </center></font>
 EOF
 
-echo "This is a test file for file browser" >> /www/filebrowser/test-filebrowser.txt
-echo "This is a test file for /share" >> /www/filebrowser/share/test-share.txt
-echo "This is a test file for /dl" >> /www/filebrowser/dl/test-dl.txt
+echo "This is a test file for file browser" >> /var/www/filebrowser/test-filebrowser.txt
+echo "This is a test file for /share" >> /var/www/filebrowser/share/test-share.txt
+echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
 
-chown -R www-data:www-data /www
-#chmod -R 555 /www
-#chmod -R 757 /www/filebrowser
-chmod -R 750 /www
+chown -R www-data:www-data /var/www
+#chmod -R 555 /var/www
+#chmod -R 757 /var/www/filebrowser
+chmod -R 750 /var/www
 
 
 
@@ -149,12 +163,17 @@ chmod -R 750 /www
 curl -fsSL https://filebrowser.org/get.sh | bash
 
 # config init
-mkdir /etc/filebroswer
+    if [ -f "/etc/filebrowser/filebrowser.db" ]; then
+        mv /etc/filebrowser/filebrowser.db /etc/filebrowser/filebrowser_backup.db
+        echo "Found previous filebrowser.db, renamed to /etc/filebrowser/filebrowser_backup.db"
+    else
+        mkdir /etc/filebroswer
+    fi
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --port 8089 \
     --baseurl "/file" \
-    --root "/www/filebrowser/" \
+    --root "/var/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
     --auth.method=json \
     --recaptcha.host https://recaptcha.net \
@@ -162,12 +181,13 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --recaptcha.secret "$secret" \
     --locale "zh-cn"
 
-# add user tony	
-filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
+# set user admin and password
+passwd=$(openssl rand -base64 6)
+filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
 chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
-cat > /lib/systemd/system/filebrowser.service << EOF
+cat > /etc/systemd/system/filebrowser.service << EOF
 [Unit]
 Description=File browser v2
 After=network.target
@@ -187,7 +207,7 @@ systemctl status caddy.service --no-pager
 
 systemctl daemon-reload
 systemctl enable filebrowser
-systemctl start filebrowser
+systemctl restart filebrowser
 systemctl status filebrowser --no-pager
 
 
@@ -196,19 +216,20 @@ cat << EOF
 =======================================================================
 Caddy v2 path        : /usr/bin/caddy
 Caddyfile path       : /etc/caddy/Caddyfile
-Web service          : $domain       --> /www/website
-Caddy browse         : $domain/dl    --> /www/filebroswer/dl
+Web service          : $domain       --> /var/www/$domain
+Caddy browse         : $domain/dl    --> /var/www/filebroswer/dl
 
 filebroswer v2 path  : /usr/local/bin/filemanager
 filebroswer.db path  : /etc/filebroswer/filebroswer.db
 
-Filebrowser          : $domain/file  --> /www/filebroswer
-# Filebrowser share  : $domain/share --> /www/filebroswer/share
+Filebrowser          : $domain/file  --> /var/www/filebroswer
+# Filebrowser share  : $domain/share --> /var/www/filebroswer/share
 =======================================================================
-Filebrowser default username & password : admin  admin
-(Please login http://$domain/file and change the password ASAP!)
-
 EOF
+echo -n "Filebrowser default username & password: "
+echo -e "\033[5;46;30m"admin $passwd"\033[0m"  
+echo "(Please login http://$domain/file and change the password ASAP!)"
+echo ""
 
 
 
