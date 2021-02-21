@@ -1,8 +1,14 @@
 #!/bin/bash
 
-echo ""
-echo "This shell will install Filebrowser v2."
-echo "If you want to use Google reCAPCHA, please prepair the key and secret."
+cat << EOF
+#
+# filebrowser2-install.sh
+# This shell scipts will install Filebroswer v2.
+#
+# For Google reCAPCHA, please have the key and secret first.
+#
+EOF
+
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
@@ -23,11 +29,17 @@ curl -fsSL https://filebrowser.org/get.sh | bash
 
 
 # config init
+    if [ -f "/etc/filebrowser/filebrowser.db" ]; then
+        mv /etc/filebrowser/filebrowser.db /etc/filebrowser/filebrowser_backup.db
+        echo "Found previous filebrowser.db, renamed to /etc/filebrowser/filebrowser_backup.db"
+    else
+        mkdir /etc/filebroswer
+    fi
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --port 8089 \
     --baseurl "/file" \
-    --root "/www/filebrowser/" \
+    --root "/var/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
     --auth.method=json \
     --recaptcha.host https://recaptcha.net \
@@ -36,11 +48,12 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
     --locale "zh-cn"
 
 # add user tony	
-filebrowser -d /etc/filebrowser/filebrowser.db users add admin admin --perm.admin
+passwd=$(openssl rand -base64 6)
+filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
 chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
-cat > /lib/systemd/system/filebrowser.service << EOF
+cat > /etc/systemd/system/filebrowser.service << EOF
 [Unit]
 Description=File browser v2
 After=network.target
@@ -55,10 +68,10 @@ WantedBy=multi-user.target
 
 EOF
 
-mkdir -p /www/filebrowser/dl
-mkdir -p /www/filebrowser/share
-chown -R www-data:www-data /www
-chmod -R 750 /www
+mkdir -p /var/www/filebrowser/dl
+mkdir -p /car/www/filebrowser/share
+chown -R www-data:www-data /car/www
+chmod -R 750 /car/www
 
 
 systemctl daemon-reload
@@ -66,22 +79,27 @@ systemctl enable filebrowser
 systemctl start filebrowser
 systemctl status filebrowser --no-pager
 
+domain="your-domain.com"
 
 cat << EOF
-
 =======================================================================
+Caddy v2 path        : /usr/bin/caddy
+Caddyfile path       : /etc/caddy/Caddyfile
+Web service          : $domain       --> /var/www/$domain
+Caddy browse         : $domain/dl    --> /var/www/filebroswer/dl
+
 filebroswer v2 path  : /usr/local/bin/filemanager
 filebroswer.db path  : /etc/filebroswer/filebroswer.db
 
-listen address       : 127.0.0.1
-listen port          : 8091
-root path            : /file  --> /www/filebroswer
-config document      : https://filebrowser.org/cli/filebrowser-config-set
+Filebrowser          : $domain/file  --> /var/www/filebroswer
+# Filebrowser share  : $domain/share --> /var/www/filebroswer/share
 =======================================================================
-Filebrowser default username & password : admin  admin
-(Please login http://$domain/file and change the password ASAP!)
-
 EOF
+echo -n "Filebrowser default username & password: "
+echo -e "\033[5;46;30m"admin $passwd"\033[0m"  
+echo "(Please login http://$domain/file and change the password ASAP!)"
+echo ""
+
 
 
 
