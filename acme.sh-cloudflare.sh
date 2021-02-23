@@ -20,7 +20,6 @@ cat << EOF
 #     Zone Resources:
 #         Include - Specific Zone - <your-domain>
 #
-# CloudFlare DNS API doesn't support .tk/.cf/.ga/.gq/.ml domains.
 EOF
 
     read -p "Continue? [y/n} " answer1
@@ -31,6 +30,7 @@ EOF
 
 # get cloudflare token & zone_id and domain name
     read -p "Please input your CloudFlare API token: " cf_token
+    read -p "Please input your CloudFlare Accound ID: " cf_account_id
     read -p "Please input your CloudFlare ZONE ID: " cf_zone_id
 
 # make choice
@@ -60,14 +60,19 @@ EOF
     if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
+    if ! command -v idn >/dev/null 2>&1; then
+       apt install idn -y
+    fi
+
 curl https://get.acme.sh | sh
 
 # export CF DNS API
 export CF_Token="$cf_token"
+export CF_Account_ID="$cf_account_id"
 export CF_Zone_ID="$cf_zone_id"
 
 # set default server
-acme.sh --set-default-ca  --server $server
+~/.acme.sh/acme.sh --set-default-ca  --server $server
 
 
     ;;
@@ -95,6 +100,13 @@ fi
 
 cat << EOF
 
+# CloudFlare DNS API doesn't support .tk/.cf/.ga/.gq/.ml domains.
+# For those domains can use DNS alias mode.
+#
+# Documents
+# https://github.com/acmesh-official/acme.sh#11-issue-wildcard-certificates
+# https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode#6-challenge-alias-or-domain-alias
+#
 1. issue ZeroSSL 90 days certificates (Default)*
 2. issue BuyPass 180 days certificates
 3. issue Let’s encrypt 90 days certificates
@@ -137,8 +149,9 @@ case $answer3 in
 
 # register account
     1|2|4|"")
+    echo "(If you already have registered on this server, just press enter to ignore.) "
     read -p "Please input your e-mail to register $issuer: " email
-    acme.sh --register-account --server $issuer -m $email
+    ~/.acme.sh/acme.sh --register-account --server $issuer -m $email
     echo "e-mail="$email
 # continue check 
     ;;&
@@ -152,16 +165,18 @@ case $answer3 in
     1|2|3|"")
 # get domain name
 read -p "Please input your domain name(without www.): " domain
+read -p "Please input your DNS alias domain name(press enter to ignore): " alias-domain
 
 # issue certificates
-acme.sh --issue --dns dns_cf \
+~/.acme.sh/acme.sh --issue --dns dns_cf \
+    --challenge-alias  $alias-domain \
     --server $issuer --days $days \
 	-d $domain -d www.$domain
 
 # install certificates to /etc/ssl/acme/
 mkdir /etc/ssl/acme/$domain -p
-acme.sh --install-cert -d $domain \
-    --reloadcmd "systemctl reload caddy.service" \
+~/.acme.sh/acme.sh --install-cert -d $domain \
+    --reloadcmd "systemctl restart caddy.service" \
     --cert-file      /etc/ssl/acme/$domain/cert.pem  \
     --key-file       /etc/ssl/acme/$domain/key.pem  \
     --fullchain-file /etc/ssl/acme/$domain/fullchain.pem 
@@ -171,16 +186,18 @@ acme.sh --install-cert -d $domain \
     4)
 # get WILDCARD domain name
 read -p "Please input your WINDCARD domain name(without www.): " domain
+read -p "Please input your DNS alias domain name(press enter to ignore): " alias-domain
 
 # issue WILDCARD certificates
-acme.sh --issue --dns dns_cf \
-    --server $issuer --days $days \
-	-d $domain -d '*.$domain'
+~/.acme.sh/acme.sh  --issue  --dns dns_cf \
+    --challenge-alias  $alias-domain \
+    --server $issuer  --days $days \
+	-d $domain  -d *.$domain
 
 # install certificates to /etc/ssl/acme/
 mkdir /etc/ssl/acme/wildcard.$domain -p
-acme.sh --install-cert -d $domain \
-    --reloadcmd "systemctl reload caddy.service" \
+~/.acme.sh/acme.sh --install-cert -d $domain \
+    --reloadcmd "systemctl restart caddy.service" \
     --cert-file      /etc/ssl/acme/wildcard.$domain/cert.pem  \
     --key-file       /etc/ssl/acme/wildcard.$domain/key.pem  \
     --fullchain-file /etc/ssl/acme/wildcard.$domain/fullchain.pem 
@@ -207,13 +224,13 @@ ls -lshF /etc/ssl/acme/$domain
 cat << EOF
 
 List all certificates:
-acme.sh --list
+~/.acme.sh/acme.sh --list
 
 Manual renewal:
-acme.sh --renew -d <domain-name>
+~/.acme.sh/acme.sh --renew -d <domain-name>
 
 Stop auto renewal in the future:
-acme.sh --remove -d <domain-name>
+~/.acme.sh/acme.sh --remove -d <domain-name>
 
 EOF
 
