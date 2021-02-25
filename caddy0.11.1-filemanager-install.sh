@@ -77,7 +77,7 @@ $domain {
 ##        recaptcha_key       ??
 ##        recaptcha_secret    ??
 ##        alternative_recaptcha
-       }
+    }
 
     filemanager /share var/www/filebrowser/share/ {
         database /etc/ssl/caddy/filemanager/$domain-share.db
@@ -87,7 +87,7 @@ $domain {
         allow_edit     false
         allow_publish  false
         no_auth
-       }
+    }
 
 
 #    fastcgi / /run/php/php7.0-fpm.sock php
@@ -143,17 +143,11 @@ echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
 chown -R www-data:www-data /var/www
 chmod -R 750 /var/www
 
-## original caddy.service file
-# For Debian9, the file \"/etc/systemd/system/caddy.service\" need to modified to:
-# CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-# AmbientCapabilities=CAP_NET_BIND_SERVICE
-# NoNewPrivileges=true
-
 ## create modified caddy.service file
 cat > /etc/systemd/system/caddy.service << EOF
 
 [Unit]
-Description=Caddy HTTP/2 web server
+Description=Caddy v0.11.1 HTTP/2 web server
 Documentation=https://caddyserver.com/docs
 After=network-online.target
 Wants=network-online.target systemd-networkd-wait-online.service
@@ -194,9 +188,7 @@ ProtectSystem=full
 ;   This merely retains r/w access rights, it does not add any new. Must still be writable on the host!
 ReadWriteDirectories=/etc/ssl/caddy
 
-# Allow Caddy File Browser to access the directory
-#ReadWriteDirectories=
-
+# Debian 9 required
 ; The following additional security directives only work with systemd v229 or later.
 ; They further restrict privileges that can be gained by caddy. Uncomment if you like.
 ; Note that you may have to add capabilities required by any plugins in use.
