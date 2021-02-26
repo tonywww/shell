@@ -155,8 +155,7 @@ StardardError=file:/var/log/efb.error
 
 [Install]
 WantedBy=multi-user.target
-Alias=efb
-Alias=ehforwarderbot
+Alias=ehforwarderbot.service
 EOF
 
 
@@ -164,6 +163,7 @@ EOF
 #ehforwarderbot --profile=/usr/local/etc/ehforwarderbot/profiles/default
 
 # after login, press "Ctrl+C", then run the follwing commands:
+systemctl daemon-reload
 systemctl enable efb.service
 systemctl restart efb.service
 cat << EOF
