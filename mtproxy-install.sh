@@ -3,7 +3,7 @@
 cat << EOF
 #
 # mtproxy-install.sh
-# This shell scipts will install MTProto Proxy Go v1.0.7
+# This shell scipts will install MTProto Proxy Go v1.0.9
 #
 # Document
 # https://github.com/9seconds/mtg
@@ -30,7 +30,7 @@ read -p "Please input listen port number(default:443):" port
     fi
 
 # install mtg
-wget -O /usr/local/bin/mtg-linux-amd64 https://github.com/9seconds/mtg/releases/download/v1.0.7/mtg-linux-amd64
+wget -O /usr/local/bin/mtg-linux-amd64 https://github.com/9seconds/mtg/releases/download/v1.0.9/mtg-linux-amd64
 chmod +x /usr/local/bin/mtg-linux-amd64
 
 # generate secret
