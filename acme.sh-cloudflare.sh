@@ -30,7 +30,7 @@ EOF
 
 # get cloudflare token & zone_id and domain name
     read -p "Please input your CloudFlare API token: " cf_token
-    read -p "Please input your CloudFlare Accound ID: " cf_account_id
+#    read -p "Please input your CloudFlare Accound ID: " cf_account_id
     read -p "Please input your CloudFlare ZONE ID: " cf_zone_id
 
 # make choice
@@ -62,6 +62,9 @@ EOF
     fi
     if ! command -v idn >/dev/null 2>&1; then
        apt install idn -y
+    fi
+    if ! command -v cron >/dev/null 2>&1; then
+       apt install cron -y
     fi
 
 curl https://get.acme.sh | sh
@@ -165,11 +168,11 @@ case $answer3 in
     1|2|3|"")
 # get domain name
 read -p "Please input your domain name(without www.): " domain
-read -p "Please input your DNS alias domain name(press enter to ignore): " alias-domain
+read -p "Please input your DNS alias domain name(press enter to ignore): " aliasdomain
 
 # issue certificates
 ~/.acme.sh/acme.sh --issue --dns dns_cf \
-    --challenge-alias  $alias-domain \
+    --challenge-alias  $aliasdomain \
     --server $issuer --days $days \
 	-d $domain -d www.$domain
 
@@ -186,11 +189,11 @@ mkdir /etc/ssl/acme/$domain -p
     4)
 # get WILDCARD domain name
 read -p "Please input your WINDCARD domain name(without www.): " domain
-read -p "Please input your DNS alias domain name(press enter to ignore): " alias-domain
+read -p "Please input your DNS alias domain name(press enter to ignore): " aliasdomain
 
 # issue WILDCARD certificates
 ~/.acme.sh/acme.sh  --issue  --dns dns_cf \
-    --challenge-alias  $alias-domain \
+    --challenge-alias  $aliasdomain \
     --server $issuer  --days $days \
 	-d $domain  -d *.$domain
 
