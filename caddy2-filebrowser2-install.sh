@@ -21,14 +21,20 @@ case $answer in
 
 ## input domain
 read -p "Please input your domain name (without www.): " domain
-read -p "Please input your Google reCAPCHA Key: " key
-read -p "Please input your Google reCAPCHA Secret: " secret
+read -p "Please input your Google reCAPCHA Site Key: " key
+read -p "Please input your Google reCAPCHA Secret Key: " secret
 
 
 ## download Caddy2
     if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
+
+    if [ -f "/etc/systemd/system/caddy.service" ]; then
+        rm /etc/systemd/system/caddy.service
+        echo "Found previous Caddy v1 service, removed Caddy v1 service."
+    fi
+
 apt install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
@@ -161,7 +167,8 @@ chmod -R 750 /var/www
     if ! command -v curl >/dev/null 2>&1; then
        apt update -y && apt install curl -y
     fi
-curl -fsSL https://filebrowser.org/get.sh | bash
+#curl -fsSL https://filebrowser.org/get.sh | bash
+curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
 # config init
     if [ -f "/etc/filebrowser/filebrowser.db" ]; then
