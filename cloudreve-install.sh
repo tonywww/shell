@@ -3,7 +3,7 @@
 cat << EOF
 #
 # cloudreve-install.sh
-# This shell scipts will install Cloudreve.
+# This shell scipts will install Cloudreve latest version.
 #
 EOF
 
@@ -17,10 +17,20 @@ case $answer in
        apt update -y && apt install tar -y
     fi
 
-wget -O "cloudreve_3.2.1_linux_amd64.tar.gz" "https://github.com/cloudreve/Cloudreve/releases/download/3.2.1/cloudreve_3.2.1_linux_amd64.tar.gz"
+    if ! command -v curl >/dev/null 2>&1; then
+       apt install curl -y
+    fi
+
+cd ~
+curl -s https://api.github.com/repos/cloudreve/Cloudreve/releases/latest \
+  | grep browser_download_url \
+  | grep linux_amd64 \
+  | cut -d '"' -f 4 \
+  | wget -O cloudreve_linux_amd64.tar.gz -qi - 
+
 
 mkdir -p /var/www/cloudreve
-tar -zxvf cloudreve_*_linux_amd64.tar.gz -C /var/www/cloudreve
+tar -zxvf cloudreve_linux_amd64.tar.gz -C /var/www/cloudreve
 chown -R www-data:www-data /var/www/cloudreve
 chmod 750 /var/www/cloudreve/cloudreve
 
