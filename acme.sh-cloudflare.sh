@@ -57,8 +57,10 @@ EOF
         esac
 
 # install acmd.sh
+apt update
+
     if ! command -v curl >/dev/null 2>&1; then
-       apt update -y && apt install curl -y
+       apt install curl -y
     fi
     if ! command -v idn >/dev/null 2>&1; then
        apt install idn -y
