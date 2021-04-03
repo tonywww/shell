@@ -28,9 +28,7 @@ read -p "Please input your domain name (without www.): " domain
 #cp /usr/local/bin/caddy /usr/local/bin/caddy_no-filemanager
 
 ## download caddy v0.11.1 with filemanager
-#wget -O /usr/local/bin/caddy_filemanager_v0.11.1 "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
-#cp /usr/local/bin/caddy_filemanager_v0.11.1 /usr/local/bin/caddy
-wget -O /usr/local/bin/caddy "https://github.com/tonywww/shell/raw/master/caddy_filemanager_v0.11.1"
+wget -O /usr/local/bin/caddy "https://raw.githubusercontent.com/tonywww/caddy-filebrowser/master/caddy"
 chmod +x /usr/local/bin/caddy
 
 ## create etc & ssl path
