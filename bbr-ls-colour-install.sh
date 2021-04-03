@@ -26,10 +26,19 @@ cat >> /etc/bash.bashrc << EOF
 export LS_OPTIONS='--color=auto'
 eval \`dircolors\`
 alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -l'
-alias l='ls \$LS_OPTIONS -lAhF'
+alias ll='ls \$LS_OPTIONS -lAhF'
+alias l='ls \$LS_OPTIONS -lahF'
 
 EOF
+
+cat >> /root/.bashrc << EOF
+
+## add l/ll
+alias ll='ls  -lAhF'
+alias l='ls -lahF'
+
+EOF
+
 
 echo ""
 echo "The colour for ls and vim has been changed!"
