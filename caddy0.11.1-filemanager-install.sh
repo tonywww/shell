@@ -20,15 +20,8 @@ case $answer in
 ## input domain
 read -p "Please input your domain name (without www.): " domain
 
-## download Caddy
-
-# old install
-#curl https://getcaddy.com | bash -s personal http.filebrowser
-#curl https://getcaddy.com | bash -s personal
-#cp /usr/local/bin/caddy /usr/local/bin/caddy_no-filemanager
-
 ## download caddy v0.11.1 with filemanager
-wget -O /usr/local/bin/caddy "https://raw.githubusercontent.com/tonywww/caddy-filebrowser/master/caddy"
+wget -O /usr/local/bin/caddy "https://raw.githubusercontent.com/tonywww/caddy/master/caddy-0.11.1-filemanager"
 chmod +x /usr/local/bin/caddy
 
 ## create etc & ssl path
