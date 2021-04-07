@@ -5,6 +5,8 @@ cat << EOF
 # filebrowser2-install.sh
 # This shell scipts will install Filebroswer v2.
 #
+# Support OS: Debian / Ubuntu / CentOS
+#
 # For Google reCAPCHA, please have the key and secret first.
 #
 EOF
@@ -21,12 +23,34 @@ read -p "Please input your Google reCAPCHA Key: " key
 read -p "Please input your Google reCAPCHA Secret: " secret
 
 
-# download filebroswer
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update -y && apt install curl -y
-    fi
-curl -fsSL https://filebrowser.org/get.sh | bash
+#check OS
+source /etc/os-release
 
+    case $ID in
+    # debian START
+    debian|ubuntu|devuan)
+    echo System OS is $PRETTY_NAME
+
+    if ! command -v curl >/dev/null 2>&1; then
+       apt update && apt install curl -y
+    fi
+    ;;
+    # debian END
+
+    # centos START
+    centos|fedora|rhel|sangoma)
+    echo System OS is $PRETTY_NAME
+
+    if ! command -v curl >/dev/null 2>&1; then
+       yum install curl -y
+    fi
+    ;;
+    # centos END
+    esac
+
+# download filebroswer
+#curl -fsSL https://filebrowser.org/get.sh | bash
+curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
 # config init
     if [ -f "/etc/filebrowser/filebrowser.db" ]; then
@@ -37,7 +61,7 @@ curl -fsSL https://filebrowser.org/get.sh | bash
     fi
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-    --port 8089 \
+    --port 8081 \
     --baseurl "/file" \
     --root "/var/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
@@ -50,6 +74,18 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
 # add user tony	
 passwd=$(openssl rand -base64 6)
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
+
+mkdir -p /var/www/filebrowser/dl
+mkdir -p /var/www/filebrowser/share
+chmod -R 750 /var/www
+
+
+#check OS
+    case $ID in
+    # debian START
+    debian|ubuntu|devuan)
+    echo System OS is $PRETTY_NAME
+chown -R www-data:www-data /var/www
 chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
@@ -67,11 +103,33 @@ ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
 WantedBy=multi-user.target
 
 EOF
+    ;;
+    # debian END
 
-mkdir -p /var/www/filebrowser/dl
-mkdir -p /car/www/filebrowser/share
-chown -R www-data:www-data /car/www
-chmod -R 750 /car/www
+    # centos START
+    centos|fedora|rhel|sangoma)
+    echo System OS is $PRETTY_NAME
+chown -R apache:apache /var/www
+chown -R apache:apache /etc/filebrowser
+
+# create systemd file and auto run
+cat > /etc/systemd/system/filebrowser.service << EOF
+[Unit]
+Description=File browser v2
+After=network.target
+
+[Service]
+User=apache
+Group=apache
+ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+    ;;
+    # centos END
+    esac
 
 
 systemctl daemon-reload
@@ -99,7 +157,6 @@ echo -n "Filebrowser default username & password: "
 echo -e "\033[5;46;30m"admin $passwd"\033[0m"  
 echo "(Please login http://$domain/file and change the password ASAP!)"
 echo ""
-
 
 
 

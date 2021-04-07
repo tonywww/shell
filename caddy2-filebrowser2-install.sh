@@ -5,6 +5,8 @@ cat << EOF
 # caddy2-filebrowser2-install.sh
 # This shell scipts will install Caddy v2 & Filebroswer v2.
 #
+# Support OS: Debian / Ubuntu / CentOS
+#
 # Before the installation, please make sure your domain has pointed to this VPS's IP."
 # For Google reCAPCHA, please have the key and secret first."
 #
@@ -25,23 +27,50 @@ read -p "Please input your Google reCAPCHA Site Key: " key
 read -p "Please input your Google reCAPCHA Secret Key: " secret
 
 
-## download Caddy2
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update -y && apt install curl -y
-    fi
-
+# check previous caddy v1 service
     if [ -f "/etc/systemd/system/caddy.service" ]; then
+        systemctl stop caddy.service
+        systemctl disable caddy.service
         rm /etc/systemd/system/caddy.service
+        systemctl daemon-reload
         echo "Found previous Caddy v1 service, removed Caddy v1 service."
     fi
 
+
+#check OS
+source /etc/os-release
+    case $ID in
+    # debian START
+    debian|ubuntu|devuan)
+    echo System OS is $PRETTY_NAME
+
+    if ! command -v curl >/dev/null 2>&1; then
+       apt update && apt install curl -y
+    fi
+## download Caddy2
 apt install -y debian-keyring debian-archive-keyring apt-transport-https
 #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
 #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | apt-key add -
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee -a /etc/apt/sources.list.d/caddy-stable.list
 apt update
-apt install caddy
+apt install caddy -y
+    ;;
+    # debian END
+
+    # centos START
+    centos|fedora|rhel|sangoma)
+    echo System OS is $PRETTY_NAME
+
+    if ! command -v curl >/dev/null 2>&1; then
+       yum install curl -y
+    fi
+yum -y install yum-plugin-copr
+yum -y copr enable @caddy/caddy
+yum -y install caddy
+    ;;
+    # centos END
+    esac
 
 
 ## create /etc/caddy/Caddyfile
@@ -102,13 +131,13 @@ $domain {
     @file {
         path /file /file/*
     }
-    reverse_proxy @file localhost:8089
+    reverse_proxy @file localhost:8081
 
 
 # Or serve a PHP site through php-fpm:
-# php_fastcgi localhost:9000
-    php_fastcgi unix//run/php/php7.0-fpm.sock
-#### php 7.0 install: apt install php-fpm
+#php_fastcgi localhost:9000
+#php_fastcgi unix//run/php/php7.0-fpm.sock
+#### php install: apt install php-fpm
 
 
 }
@@ -156,19 +185,14 @@ echo "This is a test file for file browser" >> /var/www/filebrowser/test-filebro
 echo "This is a test file for /share" >> /var/www/filebrowser/share/test-share.txt
 echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
 
-chown -R www-data:www-data /var/www
 #chmod -R 555 /var/www
 #chmod -R 757 /var/www/filebrowser
 chmod -R 750 /var/www
 
 
-
 #### install filebroswer
 
 # download filebroswer
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update -y && apt install curl -y
-    fi
 #curl -fsSL https://filebrowser.org/get.sh | bash
 curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
@@ -181,7 +205,7 @@ curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bas
     fi
 filebrowser -d /etc/filebrowser/filebrowser.db config init
 filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-    --port 8089 \
+    --port 8081 \
     --baseurl "/file" \
     --root "/var/www/filebrowser/" \
     --log "/var/log/filebrowser.log" \
@@ -194,6 +218,14 @@ filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
 # set user admin and password
 passwd=$(openssl rand -base64 6)
 filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
+
+
+#check OS
+    case $ID in
+    # debian START
+    debian|ubuntu|devuan)
+    echo System OS is $PRETTY_NAME
+chown -R www-data:www-data /var/www
 chown -R www-data:www-data /etc/filebrowser
 
 # create systemd file and auto run
@@ -211,8 +243,36 @@ ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
 WantedBy=multi-user.target
 
 EOF
+    ;;
+    # debian END
+
+    # centos START
+    centos|fedora|rhel|sangoma)
+    echo System OS is $PRETTY_NAME
+chown -R apache:apache /var/www
+chown -R apache:apache /etc/filebrowser
+
+# create systemd file and auto run
+cat > /etc/systemd/system/filebrowser.service << EOF
+[Unit]
+Description=File browser v2
+After=network.target
+
+[Service]
+User=apache
+Group=apache
+ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+    ;;
+    # centos END
+    esac
 
 
+systemctl restart caddy
 systemctl status caddy.service --no-pager
 
 systemctl daemon-reload
