@@ -62,6 +62,7 @@ curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest | grep 
 tar xvf syncthing-linux-amd64*.tar.gz
 rm syncthing-linux*.tar.gz*
 
+rm /usr/bin/syncthing -f
 cp syncthing-linux-amd64-*/syncthing  /usr/bin/
 chmod +x /usr/bin/syncthing
 
