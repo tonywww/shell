@@ -5,6 +5,8 @@ cat << EOF
 # bbr-ls-colour-install.sh
 # This shell scipts will enable BBR and change ls default colourful.
 #
+# Support OS: Debian / Ubuntu / CentOS
+#
 EOF
 
 read -p "Please press \"y\" to continue: " answer
@@ -15,27 +17,51 @@ case $answer in
 
 
 
-## change Debian vi/vim colour
+## change vi/vim colour
 sed -i 's/\"syntax on/syntax on/' /etc/vim/vimrc
 
 
-## change Debian ls colour & add l/ll
+## change system ls colour & add l/ll
+    if [ -f "/etc/bash.bashrc" ]; then 
 cat >> /etc/bash.bashrc << EOF
 
-## change Debian system ls colour & add l/ll
+## change system ls colour & add l/ll
 export LS_OPTIONS='--color=auto'
 eval \`dircolors\`
 alias ls='ls \$LS_OPTIONS'
 alias ll='ls \$LS_OPTIONS -lAhF'
 alias l='ls \$LS_OPTIONS -lahF'
 
+## auto run
+free -h
+
 EOF
+    fi
+
+    if [ -f "/etc/bashrc" ]; then 
+cat >> /etc/bashrc << EOF
+
+## change system ls colour & add l/ll
+export LS_OPTIONS='--color=auto'
+eval \`dircolors\`
+alias ls='ls \$LS_OPTIONS'
+alias ll='ls \$LS_OPTIONS -lAhF'
+alias l='ls \$LS_OPTIONS -lahF'
+
+## auto run
+free -h
+
+EOF
+    fi
 
 cat >> /root/.bashrc << EOF
 
-## add l/ll
-alias ll='ls  -lAhF'
-alias l='ls -lahF'
+## change system ls colour & add l/ll
+export LS_OPTIONS='--color=auto'
+eval \`dircolors\`
+alias ls='ls \$LS_OPTIONS'
+alias ll='ls \$LS_OPTIONS -lAhF'
+alias l='ls \$LS_OPTIONS -lahF'
 
 EOF
 
