@@ -2,8 +2,8 @@
 
 cat << EOF
 #
-# swap.sh
-# This shell scipts will create SWAP file.
+# swap-install.sh
+# This shell scipts will create custom SWAP file in /var/swapfile
 #
 EOF
 
@@ -32,8 +32,12 @@ case $answer in
 read -p "Please input SWAP size (GB): [0.5/1/2/3/4] " swapsize
 
 ## create SWAP
-fallocate -l $swapsize\G /var/swapfile
-
+swapsize1=$(echo $(awk 'BEGIN{print '$swapsize'*1024 }') | awk -F. '{print $1}')
+    if command -v fallocate >/dev/null 2>&1; then
+        fallocate -l $swapsize1\M /var/swapfile
+    else
+        dd if=/dev/zero of=/var/swapfile bs=1M count=$swapsize1
+    fi
 chmod 0600 /var/swapfile
 mkswap /var/swapfile
 swapon /var/swapfile
@@ -44,7 +48,7 @@ echo ""
 swapon --show
 ls -lh /var/swapfile
 echo ""
-echo $swapsize"G SWAP file has been created!"
+echo $swapsize"GB SWAP file has been created!"
 
 
 ## go exit
