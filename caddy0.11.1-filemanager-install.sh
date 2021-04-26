@@ -21,7 +21,7 @@ case $answer in
 read -p "Please input your domain name (without www.): " domain
 
 ## download caddy v0.11.1 with filemanager
-wget -O /usr/local/bin/caddy "https://raw.githubusercontent.com/tonywww/caddy/master/caddy-0.11.1-filemanager"
+wget -O /usr/local/bin/caddy https://git.io/caddy0
 chmod +x /usr/local/bin/caddy
 
 ## create etc & ssl path
