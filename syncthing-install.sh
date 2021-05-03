@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 #
 # syncthing-install.sh
 # Support OS: Debian / Ubuntu / CentOS
@@ -10,11 +10,11 @@ cat << EOF
 EOF
 
 no_command() {
-    if ! command -v $1 > /dev/null 2>&1; then
+    if ! command -v $1 >/dev/null 2>&1; then
         if [ -z "$3" ]; then
-        $2 install -y $1
+            $2 install -y $1
         else
-        $2 install -y $3
+            $2 install -y $3
         fi
     fi
 }
@@ -22,54 +22,53 @@ no_command() {
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
-    Y|y)
+Y | y)
     echo "continue..."
 
+    cd ~
 
-cd ~
+    #check OS
+    source /etc/os-release
 
-#check OS
-source /etc/os-release
-
-        case $ID in
-        debian|ubuntu|devuan)
+    case $ID in
+    debian | ubuntu | devuan)
         echo System OS is $PRETTY_NAME
-    apt update
-    no_command curl apt
+        apt update
+        no_command curl apt
 
-# Add the release PGP keys:
-curl -s https://syncthing.net/release-key.txt | apt-key add -
+        # Add the release PGP keys:
+        curl -s https://syncthing.net/release-key.txt | apt-key add -
 
-# Add the "stable" channel to your APT sources:
-echo "deb https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.list.d/syncthing.list
+        # Add the "stable" channel to your APT sources:
+        echo "deb https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.list.d/syncthing.list
 
-# Update and install syncthing:
-apt install -y apt-transport-https
-apt update && apt install -y syncthing
+        # Update and install syncthing:
+        apt install -y apt-transport-https
+        apt update && apt install -y syncthing
         ;;
 
-        centos|fedora|rhel|sangoma)
+    centos | fedora | rhel | sangoma)
         echo System OS is $PRETTY_NAME
-    no_command bc yum
-    yumdnf="yum"
-    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
-        yumdnf="dnf"
-    fi
-    no_command wget $yumdnf
-    no_command curl $yumdnf
-    no_command tar $yumdnf
+        no_command bc yum
+        yumdnf="yum"
+        if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+            yumdnf="dnf"
+        fi
+        no_command wget $yumdnf
+        no_command curl $yumdnf
+        no_command tar $yumdnf
 
-rm syncthing-linux*.tar.gz*
-curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4 | wget -qi -
-tar xvf syncthing-linux-amd64*.tar.gz
-rm syncthing-linux*.tar.gz*
+        rm syncthing-linux*.tar.gz*
+        curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4 | wget -qi -
+        tar xvf syncthing-linux-amd64*.tar.gz
+        rm syncthing-linux*.tar.gz*
 
-rm /usr/bin/syncthing -f
-cp syncthing-linux-amd64-*/syncthing  /usr/bin/
-chmod +x /usr/bin/syncthing
+        rm /usr/bin/syncthing -f
+        cp syncthing-linux-amd64-*/syncthing /usr/bin/
+        chmod +x /usr/bin/syncthing
 
-# create syncthing.service
-cat > /lib/systemd/system/syncthing@.service << EOF
+        # create syncthing.service
+        cat >/lib/systemd/system/syncthing@.service <<EOF
 [Unit]
 Description=Syncthing - Open Source Continuous File Synchronization for %I
 Documentation=man:syncthing(1)
@@ -96,7 +95,7 @@ NoNewPrivileges=true
 WantedBy=multi-user.target
 EOF
 
-cat > /lib/systemd/system/syncthing-resume.service << EOF
+        cat >/lib/systemd/system/syncthing-resume.service <<EOF
 [Unit]
 Description=Restart Syncthing after resume
 Documentation=man:syncthing(1)
@@ -110,28 +109,25 @@ ExecStart=-/usr/bin/pkill -HUP -x syncthing
 WantedBy=sleep.target
 EOF
 
-systemctl daemon-reload
+        systemctl daemon-reload
         ;;
-        esac
+    esac
 
+    # create syncthing user
+    useradd -m syncthing
 
-# create syncthing user
-useradd -m syncthing
+    systemctl enable syncthing@syncthing.service
+    systemctl restart syncthing@syncthing.service
 
-systemctl enable syncthing@syncthing.service
-systemctl restart syncthing@syncthing.service
+    echo "Please wait for Syncthing service starting..."
+    sleep 5s
 
-echo "Please wait for Syncthing service starting..."
-sleep 5s
+    systemctl status syncthing@syncthing.service --no-pager
 
-systemctl status syncthing@syncthing.service --no-pager
-
-
-
-## go exit
+    ## go exit
     ;;
 
-    *)
+*)
     echo "exit"
     ;;
 

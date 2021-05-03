@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 #
 # axel-install.sh
 # Support OS: Debian / Ubuntu / CentOS
@@ -14,11 +14,11 @@ cat << EOF
 EOF
 
 no_command() {
-    if ! command -v $1 > /dev/null 2>&1; then
+    if ! command -v $1 >/dev/null 2>&1; then
         if [ -z "$3" ]; then
-        $2 install -y $1
+            $2 install -y $1
         else
-        $2 install -y $3
+            $2 install -y $3
         fi
     fi
 }
@@ -26,43 +26,41 @@ no_command() {
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
-    Y|y)
+Y | y)
     echo "continue..."
-
 
     if command -v axel >/dev/null 2>&1; then
         echo "axel has already installed!"
         exit 1
     fi
 
-cd ~
+    cd ~
 
-#check OS
-source /etc/os-release
-        case $ID in
-        debian|ubuntu|devuan)
+    #check OS
+    source /etc/os-release
+    case $ID in
+    debian | ubuntu | devuan)
         echo System OS is $PRETTY_NAME
-apt update && apt install -y axel
+        apt update && apt install -y axel
         ;;
 
-        centos|fedora|rhel|sangoma)
+    centos | fedora | rhel | sangoma)
         echo System OS is $PRETTY_NAME
-no_command wget yum
-wget -O axel-2.4-9.el7.x86_64.rpm https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/a/axel-2.4-9.el7.x86_64.rpm
-rpm -Uvh axel-2.4-9.el7.x86_64.rpm
-yum install axel
+        no_command wget yum
+        wget -O axel-2.4-9.el7.x86_64.rpm https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/a/axel-2.4-9.el7.x86_64.rpm
+        rpm -Uvh axel-2.4-9.el7.x86_64.rpm
+        yum install axel
         ;;
-    
-        esac
 
-echo "whereis axel"
-whereis axel
+    esac
 
+    echo "whereis axel"
+    whereis axel
 
-## go exit
+    ## go exit
     ;;
 
-    *)
+*)
     echo "exit"
     ;;
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 #
 # caddy2-filebrowser2-install.sh
 # Support OS: Debian / Ubuntu / CentOS
@@ -13,11 +13,11 @@ cat << EOF
 EOF
 
 no_command() {
-    if ! command -v $1 > /dev/null 2>&1; then
+    if ! command -v $1 >/dev/null 2>&1; then
         if [ -z "$3" ]; then
-        $2 install -y $1
+            $2 install -y $1
         else
-        $2 install -y $3
+            $2 install -y $3
         fi
     fi
 }
@@ -25,19 +25,29 @@ no_command() {
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
-    Y|y)
+Y | y)
     echo "continue..."
 
+    #### install Caddy2
 
-#### install Caddy2
+    ## get domain
+    while true; do
+        read -p "Please input your domain name (without www.): " domain
+        if [ -z "$domain" ]; then
+            cat <<EOF
+Domain name is required.
+Please try again, or press Ctrl+C to break and exit.
 
-## input domain
-read -p "Please input your domain name (without www.): " domain
-read -p "Please input your Google reCAPCHA Site Key: " key
-read -p "Please input your Google reCAPCHA Secret Key: " secret
+EOF
+            continue
+        fi
+        break
+    done
 
+    read -p "Please input your Google reCAPCHA Site Key: " key
+    read -p "Please input your Google reCAPCHA Secret Key: " secret
 
-# check previous caddy v1 service
+    # check previous caddy v1 service
     if [ -f "/etc/systemd/system/caddy.service" ]; then
         systemctl stop caddy.service
         systemctl disable caddy.service
@@ -46,43 +56,44 @@ read -p "Please input your Google reCAPCHA Secret Key: " secret
         echo "Found previous Caddy v1 service, removed Caddy v1 service."
     fi
 
-
-#check OS
-source /etc/os-release
-        case $ID in
-        debian|ubuntu|devuan)
+    #check OS
+    source /etc/os-release
+    case $ID in
+    debian | ubuntu | devuan)
         echo System OS is $PRETTY_NAME
-apt update
-no_command curl apt
+        apt update
+        no_command curl apt
 
-## download Caddy2
-apt install -y debian-keyring debian-archive-keyring apt-transport-https
-#curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
-#curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | apt-key add -
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee -a /etc/apt/sources.list.d/caddy-stable.list
-apt update
-apt install caddy -y
+        ## download Caddy2
+        apt install -y debian-keyring debian-archive-keyring apt-transport-https
+        #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
+        #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | apt-key add -
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee -a /etc/apt/sources.list.d/caddy-stable.list
+        apt update
+        apt install caddy -y
         ;;
 
-        centos|fedora|rhel|sangoma)
+    centos | fedora | rhel | sangoma)
         echo System OS is $PRETTY_NAME
         no_command bc yum
         yumdnf="yum"
         if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
             yumdnf="dnf"
+            $yumdnf install -y 'dnf-command(copr)'
+        else
+            $yumdnf -y install yum-plugin-copr
         fi
-no_command curl $yumdnf
+        no_command curl $yumdnf
+        adduser -r -d /var/www -s /sbin/nologin www-data -U
 
-$yumdnf -y install yum-plugin-copr
-$yumdnf -y copr enable @caddy/caddy
-$yumdnf -y install caddy
+        $yumdnf -y copr enable @caddy/caddy
+        $yumdnf -y install caddy
         ;;
-        esac
+    esac
 
-
-## create /etc/caddy/Caddyfile
-cat > /etc/caddy/Caddyfile << EOF
+    ## create /etc/caddy/Caddyfile
+    cat >/etc/caddy/Caddyfile <<EOF
 # The Caddyfile is an easy way to configure your Caddy web server.
 #
 # Unless the file starts with a global options block, the first
@@ -165,78 +176,71 @@ $domain {
 
 EOF
 
-chmod 644 /etc/caddy/Caddyfile
+    chmod 644 /etc/caddy/Caddyfile
 
-## create file browser directories
-mkdir -p /var/www/filebrowser/share
-mkdir -p /var/www/filebrowser/dl
+    ## create file browser directories
+    mkdir -p /var/www/filebrowser/share
+    mkdir -p /var/www/filebrowser/dl
 
-## create website directories
-mkdir -p /var/www/$domain
-rm -rf /var/www/$domain/dl
-ln -s /var/www/filebrowser/dl /var/www/$domain/dl
+    ## create website directories
+    mkdir -p /var/www/$domain
+    rm -rf /var/www/$domain/dl
+    ln -s /var/www/filebrowser/dl /var/www/$domain/dl
 
-## create default files
+    ## create default files
 
     if [ -f "/var/www/$domain/index.html" ]; then
         mv /var/www/$domain/index.html /var/www/$domain/index_backup.html
         echo "Found previous index.html, renamed to /var/www/$domain/index_backup.html"
     fi
 
-cat > /var/www/$domain/index.html << EOF
+    cat >/var/www/$domain/index.html <<EOF
 <font size="8" face="Comic Sans MS"><center>
 -- Welcome to $domain! --
 </center></font>
 EOF
 
-echo "This is a test file for file browser" >> /var/www/filebrowser/test-filebrowser.txt
-echo "This is a test file for /share" >> /var/www/filebrowser/share/test-share.txt
-echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
+    echo "This is a test file for file browser" >>/var/www/filebrowser/test-filebrowser.txt
+    echo "This is a test file for /share" >>/var/www/filebrowser/share/test-share.txt
+    echo "This is a test file for /dl" >>/var/www/filebrowser/dl/test-dl.txt
 
-#chmod -R 555 /var/www
-#chmod -R 757 /var/www/filebrowser
-chmod -R 750 /var/www
+    #chmod -R 555 /var/www
+    #chmod -R 757 /var/www/filebrowser
+    chmod -R 750 /var/www
 
+    #### install filebroswer2
 
-#### install filebroswer2
+    # download filebroswer2
+    curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
-# download filebroswer2
-curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
-
-# config init
+    # config init
     if [ -f "/etc/filebrowser/filebrowser.db" ]; then
         mv /etc/filebrowser/filebrowser.db /etc/filebrowser/filebrowser_backup.db
         echo "Found previous filebrowser.db, renamed to /etc/filebrowser/filebrowser_backup.db"
     else
         mkdir /etc/filebroswer
     fi
-filebrowser -d /etc/filebrowser/filebrowser.db config init
-filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-    --port 8081 \
-    --baseurl "/file" \
-    --root "/var/www/filebrowser/" \
-    --log "/var/log/filebrowser.log" \
-    --auth.method=json \
-    --recaptcha.host https://recaptcha.net \
-    --recaptcha.key "$key" \
-    --recaptcha.secret "$secret" \
-    --locale "zh-cn"
+    filebrowser -d /etc/filebrowser/filebrowser.db config init
+    filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
+        --port 8081 \
+        --baseurl "/file" \
+        --root "/var/www/filebrowser/" \
+        --log "/var/log/filebrowser.log" \
+        --auth.method=json \
+        --recaptcha.host https://recaptcha.net \
+        --recaptcha.key "$key" \
+        --recaptcha.secret "$secret" \
+        --locale "zh-cn"
 
-# set user admin and password
-passwd=$(openssl rand -base64 6)
-filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
+    # set user admin and password
+    passwd=$(openssl rand -base64 6)
+    filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
 
+    chown -R www-data:www-data /var/www
+    chown -R www-data:www-data /etc/filebrowser
 
-#check OS
-    case $ID in
-    # debian START
-    debian|ubuntu|devuan)
-    echo System OS is $PRETTY_NAME
-chown -R www-data:www-data /var/www
-chown -R www-data:www-data /etc/filebrowser
-
-# create systemd file and auto run
-cat > /etc/systemd/system/filebrowser.service << EOF
+    # create systemd file and auto run
+    cat >/etc/systemd/system/filebrowser.service <<EOF
 [Unit]
 Description=File browser v2
 After=network.target
@@ -250,45 +254,16 @@ ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
 WantedBy=multi-user.target
 
 EOF
-    ;;
-    # debian END
 
-    # centos START
-    centos|fedora|rhel|sangoma)
-    echo System OS is $PRETTY_NAME
-chown -R apache:apache /var/www
-chown -R apache:apache /etc/filebrowser
+    systemctl restart caddy
+    systemctl status caddy.service --no-pager
 
-# create systemd file and auto run
-cat > /etc/systemd/system/filebrowser.service << EOF
-[Unit]
-Description=File browser v2
-After=network.target
+    systemctl daemon-reload
+    systemctl enable filebrowser
+    systemctl restart filebrowser
+    systemctl status filebrowser --no-pager
 
-[Service]
-User=apache
-Group=apache
-ExecStart=/usr/local/bin/filebrowser -d /etc/filebrowser/filebrowser.db
-
-[Install]
-WantedBy=multi-user.target
-
-EOF
-    ;;
-    # centos END
-    esac
-
-
-systemctl restart caddy
-systemctl status caddy.service --no-pager
-
-systemctl daemon-reload
-systemctl enable filebrowser
-systemctl restart filebrowser
-systemctl status filebrowser --no-pager
-
-
-cat << EOF
+    cat <<EOF
 
 =======================================================================
 Caddy v2 path        : /usr/bin/caddy
@@ -303,19 +278,16 @@ Filebrowser          : $domain/file  --> /var/www/filebroswer
 # Filebrowser share  : $domain/share --> /var/www/filebroswer/share
 =======================================================================
 EOF
-echo -n "Filebrowser default username & password: "
-echo -e "\033[5;46;30m"admin $passwd"\033[0m"  
-echo "(Please login http://$domain/file and change the password ASAP!)"
-echo ""
+    echo -n "Filebrowser default username & password: "
+    echo -e "\033[5;46;30m"admin $passwd"\033[0m"
+    echo "(Please login http://$domain/file and change the password ASAP!)"
+    echo ""
 
-
-
-## go exit
+    ## go exit
     ;;
 
-
-## end    
-    *)
+    ## end
+*)
     echo "exit"
     ;;
 

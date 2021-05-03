@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 #
 # openvpn-install.sh
 # Support OS: Debian / Ubuntu / CentOS
@@ -10,11 +10,11 @@ cat << EOF
 EOF
 
 no_command() {
-    if ! command -v $1 > /dev/null 2>&1; then
+    if ! command -v $1 >/dev/null 2>&1; then
         if [ -z "$3" ]; then
-        $2 install -y $1
+            $2 install -y $1
         else
-        $2 install -y $3
+            $2 install -y $3
         fi
     fi
 }
@@ -22,44 +22,42 @@ no_command() {
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
-    Y|y)
+Y | y)
     echo "continue..."
 
-#check OS
-source /etc/os-release
+    #check OS
+    source /etc/os-release
 
-        case $ID in
-        debian|ubuntu|devuan)
+    case $ID in
+    debian | ubuntu | devuan)
         echo System OS is $PRETTY_NAME
-    apt update
-    no_command gzip apt
-apt install -y openvpn
+        apt update
+        no_command gzip apt
+        apt install -y openvpn
         ;;
 
-        centos|fedora|rhel|sangoma)
+    centos | fedora | rhel | sangoma)
         echo System OS is $PRETTY_NAME
-    no_command bc yum
-    yumdnf="yum"
-    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
-        yumdnf="dnf"
-    fi
-    no_command gzip $yumdnf
-$yumdnf install -y epel-release
-$yumdnf install -y openvpn easy-rsa
+        no_command bc yum
+        yumdnf="yum"
+        if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+            yumdnf="dnf"
+        fi
+        no_command gzip $yumdnf
+        $yumdnf install -y epel-release
+        $yumdnf install -y openvpn easy-rsa
         ;;
-        esac
+    esac
 
+    # publice IP rules for OpenVPN client
+    #ip rule add from $(ip route get 1 | grep -Po '(?<=src )(\S+)') table 128
+    #ip route add table 128 to $(ip route get 1 | grep -Po '(?<=src )(\S+)')/32 dev $(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
+    #ip route add table 128 default via $(ip -4 route ls | grep default | grep -Po '(?<=via )(\S+)')
+    # rules for OpenVPN server
+    #iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 
-# publice IP rules for OpenVPN client
-#ip rule add from $(ip route get 1 | grep -Po '(?<=src )(\S+)') table 128
-#ip route add table 128 to $(ip route get 1 | grep -Po '(?<=src )(\S+)')/32 dev $(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
-#ip route add table 128 default via $(ip -4 route ls | grep default | grep -Po '(?<=via )(\S+)')
-# rules for OpenVPN server 
-#iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
-
-
-# add publice IP rules for OpenVPN
-cat > /etc/network/if-up.d/openvpn-public-ip-rule << EOF
+    # add publice IP rules for OpenVPN
+    cat >/etc/network/if-up.d/openvpn-public-ip-rule <<EOF
 #!/bin/bash
 
 # rules for OpenVPN client
@@ -72,7 +70,7 @@ iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 
 EOF
 
-cat > /etc/network/if-down.d/openvpn-public-ip-rule << EOF
+    cat >/etc/network/if-down.d/openvpn-public-ip-rule <<EOF
 #!/bin/bash
 
 # rules for OpenVPN client
@@ -85,38 +83,28 @@ iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
 
 EOF
 
-chmod +x /etc/network/if-up.d/openvpn-public-ip-rule
-chmod +x /etc/network/if-down.d/openvpn-public-ip-rule
-/etc/network/if-up.d/openvpn-public-ip-rule
+    chmod +x /etc/network/if-up.d/openvpn-public-ip-rule
+    chmod +x /etc/network/if-down.d/openvpn-public-ip-rule
+    /etc/network/if-up.d/openvpn-public-ip-rule
 
-
-# enable ipv4 forward for this VPS's client to connect Internet
-cat >> /etc/sysctl.conf << EOF
+    # enable ipv4 forward for this VPS's client to connect Internet
+    cat >>/etc/sysctl.conf <<EOF
 ## enable ipv4 forward for OpenVPN server
 net.ipv4.ip_forward = 1
 
 EOF
 
-# enable ipv4 forward
-sysctl -p /etc/sysctl.conf
+    # enable ipv4 forward
+    sysctl -p /etc/sysctl.conf
 
+    ## OpenVPN client files download
+    #wget -O /etc/openvpn/client/sample-client.conf  "https://github.com/OpenVPN/openvpn/raw/master/sample/sample-config-files/client.conf"
+    #wget -O /etc/openvpn/server/server-sample.conf  "https://github.com/OpenVPN/openvpn/raw/master/sample/sample-config-files/server.conf"
+    cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf /etc/openvpn/client/sample-client.conf
+    gzip -d /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz
+    cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf /etc/openvpn/server/sample-server.conf
 
-## OpenVPN client files download
-#wget -O /etc/openvpn/client/sample-client.conf  "https://github.com/OpenVPN/openvpn/raw/master/sample/sample-config-files/client.conf"
-#wget -O /etc/openvpn/server/server-sample.conf  "https://github.com/OpenVPN/openvpn/raw/master/sample/sample-config-files/server.conf"
-cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf /etc/openvpn/client/sample-client.conf
-gzip -d /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz
-cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf /etc/openvpn/server/sample-server.conf
-
-cat >> /etc/openvpn/client/sample-client.conf <<EOF
-
-
-# change the message authentication algorithm (HMAC) from SHA1 to SHA256
-auth SHA256
-
-EOF
-
-cat >> /etc/openvpn/server/sample-server.conf <<EOF
+    cat >>/etc/openvpn/client/sample-client.conf <<EOF
 
 
 # change the message authentication algorithm (HMAC) from SHA1 to SHA256
@@ -124,7 +112,15 @@ auth SHA256
 
 EOF
 
-cat > /etc/openvpn/server/server.conf <<EOF
+    cat >>/etc/openvpn/server/sample-server.conf <<EOF
+
+
+# change the message authentication algorithm (HMAC) from SHA1 to SHA256
+auth SHA256
+
+EOF
+
+    cat >/etc/openvpn/server/server.conf <<EOF
 port 1194
 proto udp
 dev tun
@@ -161,7 +157,7 @@ tls-auth ta.key 0  # This file is secret
 
 EOF
 
-cat > /etc/openvpn/server/client.conf <<EOF
+    cat >/etc/openvpn/server/client.conf <<EOF
 client
 dev tun
 proto udp
@@ -199,12 +195,10 @@ tls-auth ta.key 1
 
 EOF
 
+    # disable openvpn service
+    systemctl disable openvpn.service
 
-# disable openvpn service
-systemctl disable openvpn.service
-
-
-cat << EOF
+    cat <<EOF
 
 OpenVPN has been installed!
 
@@ -226,13 +220,11 @@ systemctl enable openvpn-...
 
 EOF
 
-
-## go exit
+    ## go exit
     ;;
 
-
-## end
-    *)
+    ## end
+*)
     echo "exit"
     ;;
 

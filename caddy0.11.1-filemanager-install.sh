@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 #
 # caddy0.11.1-filemanager-install.sh
 # Support OS: Debian / Ubuntu / CentOS
@@ -11,26 +11,69 @@ cat << EOF
 #
 EOF
 
+no_command() {
+    if ! command -v $1 >/dev/null 2>&1; then
+        if [ -z "$3" ]; then
+            $2 install -y $1
+        else
+            $2 install -y $3
+        fi
+    fi
+}
+
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
-    Y|y)
+Y | y)
     echo "continue..."
 
-# install Caddy
+    #check OS
+    source /etc/os-release
 
-## input domain
-read -p "Please input your domain name (without www.): " domain
+    case $ID in
+    debian | ubuntu | devuan)
+        echo System OS is $PRETTY_NAME
+        apt update
+        no_command wget apt
+        ;;
 
-## download caddy v0.11.1 with filemanager
-wget -O /usr/local/bin/caddy https://git.io/caddy0
-chmod +x /usr/local/bin/caddy
+    centos | fedora | rhel | sangoma)
+        echo System OS is $PRETTY_NAME
+        no_command bc yum
+        yumdnf="yum"
+        if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+            yumdnf="dnf"
+        fi
+        no_command wget $yumdnf
+        adduser -r -d /var/www -s /sbin/nologin www-data -U
+        ;;
+    esac
 
-## create etc & ssl path
-mkdir /etc/caddy
+    ## install Caddy
 
-## create /etc/caddy/Caddyfile
-cat > /etc/caddy/Caddyfile << EOF
+    ## get domain
+    while true; do
+        read -p "Please input your domain name (without www.): " domain
+        if [ -z "$domain" ]; then
+            cat <<EOF
+Domain name is required.
+Please try again, or press Ctrl+C to break and exit.
+
+EOF
+            continue
+        fi
+        break
+    done
+
+    ## download caddy v0.11.1 with filemanager
+    wget -O /usr/local/bin/caddy https://git.io/caddy0
+    chmod +x /usr/local/bin/caddy
+
+    ## create etc & ssl path
+    mkdir /etc/caddy
+
+    ## create /etc/caddy/Caddyfile
+    cat >/etc/caddy/Caddyfile <<EOF
 # Caddy v0.11.1 config file
 
 # force whole site http to https
@@ -96,48 +139,48 @@ $domain {
 
 EOF
 
-## create caddy directories
-chown -R www-data:www-data /etc/caddy
-chmod 644 /etc/caddy/Caddyfile
+    ## create caddy directories
+    chown -R www-data:www-data /etc/caddy
+    chmod 644 /etc/caddy/Caddyfile
 
-mkdir -p /etc/ssl/caddy/filemanager
-chown -R www-data:www-data /etc/ssl/caddy
-chmod -R 740 /etc/ssl/caddy
+    mkdir -p /etc/ssl/caddy/filemanager
+    chown -R www-data:www-data /etc/ssl/caddy
+    chmod -R 740 /etc/ssl/caddy
 
-#chown -R root:www-data /etc/caddy
-#mkdir -m 0770 /etc/ssl/caddy
-#chown -R www-data:root /etc/ssl/caddy
+    #chown -R root:www-data /etc/caddy
+    #mkdir -m 0770 /etc/ssl/caddy
+    #chown -R www-data:root /etc/ssl/caddy
 
-## create file browser directories
-mkdir -p /var/www/filebrowser/share
-mkdir -p /var/www/filebrowser/dl
+    ## create file browser directories
+    mkdir -p /var/www/filebrowser/share
+    mkdir -p /var/www/filebrowser/dl
 
-## create website directories
-mkdir -p /var/www/$domain
-rm -r /var/www/$domain/dl
-ln -s /var/www/filebrowser/dl /var/www/$domain/dl
+    ## create website directories
+    mkdir -p /var/www/$domain
+    rm -r /var/www/$domain/dl
+    ln -s /var/www/filebrowser/dl /var/www/$domain/dl
 
-## create default files
+    ## create default files
 
     if [ -f "/var/www/$domain/index.html" ]; then
         mv /var/www/$domain/index.html /var/www/$domain/index_backup.html
         echo "Found previous index.html, renamed to /var/www/$domain/index_backup.html"
     fi
 
-cat > /var/www/$domain/index.html << EOF
+    cat >/var/www/$domain/index.html <<EOF
 <font size="8" face="Comic Sans MS"><center>
 -- Welcome to $domain! --
 </center></font>
 EOF
 
-echo "This is a test file for file browser" >> /var/www/filebrowser/test-filebrowser.txt
-echo "This is a test file for /share" >> /var/www/filebrowser/share/test-share.txt
-echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
-chown -R www-data:www-data /var/www
-chmod -R 750 /var/www
+    echo "This is a test file for file browser" >>/var/www/filebrowser/test-filebrowser.txt
+    echo "This is a test file for /share" >>/var/www/filebrowser/share/test-share.txt
+    echo "This is a test file for /dl" >>/var/www/filebrowser/dl/test-dl.txt
+    chown -R www-data:www-data /var/www
+    chmod -R 750 /var/www
 
-## create modified caddy.service file
-cat > /etc/systemd/system/caddy.service << EOF
+    ## create modified caddy.service file
+    cat >/etc/systemd/system/caddy.service <<EOF
 
 [Unit]
 Description=Caddy v0.11.1 HTTP/2 web server
@@ -194,21 +237,20 @@ WantedBy=multi-user.target
 
 EOF
 
-#chown root:root /etc/systemd/system/caddy.service
-#chmod 644 /etc/systemd/system/caddy.service
+    #chown root:root /etc/systemd/system/caddy.service
+    #chmod 644 /etc/systemd/system/caddy.service
 
-## load Caddy as a system service & autorun
-systemctl daemon-reload
-systemctl disable caddy.service
-systemctl enable caddy.service
-systemctl restart caddy.service
-echo "Please wait for web service starting..."
-sleep 5s
-echo "======================================================================="
-systemctl status caddy.service --no-pager
+    ## load Caddy as a system service & autorun
+    systemctl daemon-reload
+    systemctl disable caddy.service
+    systemctl enable caddy.service
+    systemctl restart caddy.service
+    echo "Please wait for web service starting..."
+    sleep 5s
+    echo "======================================================================="
+    systemctl status caddy.service --no-pager
 
-
-cat << EOF
+    cat <<EOF
 
 =======================================================================
 Caddy v0.11.1 path   : /usr/local/bin/caddy
@@ -220,18 +262,16 @@ Filebrowser          : $domain/file  --> /var/www/filebroswer
 Filebrowser share    : $domain/share --> /var/www/filebroswer/share
 =======================================================================
 EOF
-echo -n "Filebrowser default username & password: "
-echo -e "\033[5;46;30m"admin admin"\033[0m"
-echo "(Please login http://$domain/file and change the password ASAP!)"
-echo ""
+    echo -n "Filebrowser default username & password: "
+    echo -e "\033[5;46;30m"admin admin"\033[0m"
+    echo "(Please login http://$domain/file and change the password ASAP!)"
+    echo ""
 
-
-## go exit
+    ## go exit
     ;;
 
-
-## end    
-    *)
+    ## end
+*)
     echo "exit"
     ;;
 
