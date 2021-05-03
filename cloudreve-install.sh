@@ -3,9 +3,21 @@
 cat << EOF
 #
 # cloudreve-install.sh
+# Support OS: Debian / Ubuntu / CentOS
+#
 # This shell scipts will install Cloudreve latest version.
 #
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -13,13 +25,32 @@ case $answer in
     Y|y)
     echo "continue..."
 
-    if ! command -v tar >/dev/null 2>&1; then
-       apt update -y && apt install tar -y
-    fi
+#check OS
+source /etc/os-release
 
-    if ! command -v curl >/dev/null 2>&1; then
-       apt install curl -y
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+    apt update
+    no_command wget apt
+    no_command curl apt
+    no_command tar apt
+    no_command pkill apt procps
+        ;;
+
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+    no_command bc yum
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
     fi
+    no_command wget $yumdnf
+    no_command curl $yumdnf
+    no_command tar $yumdnf
+    no_command pkill $yumdnf procps-ng
+        ;;
+        esac
 
 cd ~
 curl -s https://api.github.com/repos/cloudreve/Cloudreve/releases/latest \

@@ -3,12 +3,24 @@
 cat << EOF
 #
 # mtproxy-install.sh
+# Support OS: Debian / Ubuntu / CentOS
+#
 # This shell scipts will install MTProto Proxy Go latest version
 #
 # Document
 # https://github.com/9seconds/mtg
 #
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -29,12 +41,30 @@ read -p "Please input listen port number(default:443):" port
     port=443
     fi
 
-# install mtg
-#wget -O /usr/local/bin/mtg-linux-amd64 https://github.com/9seconds/mtg/releases/download/v1.0.9/mtg-linux-amd64
+#check OS
+source /etc/os-release
 
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update -y && apt install curl -y
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+    apt update
+    no_command wget apt
+    no_command curl apt
+        ;;
+
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+    no_command bc yum
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
     fi
+    no_command wget $yumdnf
+    no_command curl $yumdnf
+        ;;
+        esac
+
+# install mtg
 curl -s https://api.github.com/repos/9seconds/mtg/releases/latest \
     | grep browser_download_url \
     | grep mtg-linux-amd64 \

@@ -3,9 +3,21 @@
 cat << EOF
 #
 # openvpn-install.sh
+# Support OS: Debian / Ubuntu / CentOS
+#
 # This shell scipts will install OpenVPN (client & server) service.
 #
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -13,10 +25,30 @@ case $answer in
     Y|y)
     echo "continue..."
 
+#check OS
+source /etc/os-release
 
-## install openvpn
-apt update -y
-apt install openvpn gzip -y
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+    apt update
+    no_command gzip apt
+apt install -y openvpn
+        ;;
+
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+    no_command bc yum
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
+    fi
+    no_command gzip $yumdnf
+$yumdnf install -y epel-release
+$yumdnf install -y openvpn easy-rsa
+        ;;
+        esac
+
 
 # publice IP rules for OpenVPN client
 #ip rule add from $(ip route get 1 | grep -Po '(?<=src )(\S+)') table 128

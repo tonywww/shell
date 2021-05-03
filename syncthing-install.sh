@@ -3,13 +3,21 @@
 cat << EOF
 #
 # syncthing-install.sh
+# Support OS: Debian / Ubuntu / CentOS
 #
 # This shell scipts will install Syncthing as a service.
 #
-# Support OS: Debian / Ubuntu / CentOS
-#
-#
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -23,39 +31,33 @@ cd ~
 #check OS
 source /etc/os-release
 
-    case $ID in
-
-    # debian START
-    debian|ubuntu|devuan)
-    echo System OS is $PRETTY_NAME
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+    apt update
+    no_command curl apt
 
 # Add the release PGP keys:
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update && apt install curl -y
-    fi
 curl -s https://syncthing.net/release-key.txt | apt-key add -
 
 # Add the "stable" channel to your APT sources:
 echo "deb https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.list.d/syncthing.list
 
 # Update and install syncthing:
-apt install apt-transport-https -y
-apt update -y
-apt install syncthing -y
-    ;;
-    # debian END
+apt install -y apt-transport-https
+apt update && apt install -y syncthing
+        ;;
 
-
-    # centos START
-    centos|fedora|rhel|sangoma)
-    echo System OS is $PRETTY_NAME
-
-    if ! command -v curl >/dev/null 2>&1; then
-       yum install curl -y
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+    no_command bc yum
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
     fi
-    if ! command -v tar >/dev/null 2>&1; then
-       yum install tar -y
-    fi
+    no_command wget $yumdnf
+    no_command curl $yumdnf
+    no_command tar $yumdnf
 
 rm syncthing-linux*.tar.gz*
 curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4 | wget -qi -
@@ -109,10 +111,8 @@ WantedBy=sleep.target
 EOF
 
 systemctl daemon-reload
-    ;;
-    # centos END
-
-    esac
+        ;;
+        esac
 
 
 # create syncthing user

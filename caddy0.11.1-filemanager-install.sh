@@ -3,6 +3,8 @@
 cat << EOF
 #
 # caddy0.11.1-filemanager-install.sh
+# Support OS: Debian / Ubuntu / CentOS
+#
 # This shell scipts will install Caddy v0.11.1 with FileManager(Filebroswer).
 #
 # Before the installation, please make sure your domain has pointed to this VPS's IP."
