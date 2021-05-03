@@ -33,6 +33,15 @@ EOF
     shift
 done
 
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 # check acme.sh, if it exist, then issue certificates
 if [ ! -x "/root/.acme.sh/acme.sh" ]; then 
@@ -62,10 +71,6 @@ EOF
     Y|y)
     echo "continue..."
 
-
-no_command() {
-    ! command -v "$1" > /dev/null 2>&1
-}
 
 # get cloudflare token & zone_id and domain name
     while true
@@ -109,31 +114,27 @@ EOF
 source /etc/os-release
 
         case $ID in
-    # debian START
-    debian|ubuntu|devuan)
-    echo System OS is $PRETTY_NAME
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
     apt update
-    if no_command curl; then
-       apt install curl -y
-    elif no_command idn; then
-       apt install idn -y
-    elif no_command cron ; then
-       apt install cron -y
+    no_command curl apt
+    no_command idn apt
+    no_command cron apt
+        ;;
+
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+
+    no_command bc yum bc
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
     fi
-    ;;
-    # debian END
-    # centos START
-    centos|fedora|rhel|sangoma)
-    echo System OS is $PRETTY_NAME
-    if no_command curl; then
-       yum install curl -y
-    elif no_command idn; then
-       yum install idn -y
-    elif no_command cron; then
-       yum install cron -y
-    fi
-    ;;
-    # centos END
+
+    no_command curl $yumdnf
+    no_command idn $yumdnf
+    no_command cron $yumdnf
+        ;;
         esac
 
 # install acmd.sh
