@@ -9,7 +9,7 @@ echo "
 
 while [[ "$command" != "exit" ]]; do
 
-read -p "Please input command to check: " command
+    read -p "Please input command to check: " command
 
     if ! command -v $command >/dev/null 2>&1; then
         echo $command "doesn't exist!"
@@ -19,7 +19,4 @@ read -p "Please input command to check: " command
 
 done
 
-
 exit 0
-
-
