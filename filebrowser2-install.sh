@@ -3,13 +3,23 @@
 cat << EOF
 #
 # filebrowser2-install.sh
-# This shell scipts will install Filebroswer v2.
-#
 # Support OS: Debian / Ubuntu / CentOS
+#
+# This shell scipts will install Filebroswer v2.
 #
 # For Google reCAPCHA, please have the key and secret first.
 #
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -22,31 +32,26 @@ case $answer in
 read -p "Please input your Google reCAPCHA Key: " key
 read -p "Please input your Google reCAPCHA Secret: " secret
 
-
 #check OS
 source /etc/os-release
 
-    case $ID in
-    # debian START
-    debian|ubuntu|devuan)
-    echo System OS is $PRETTY_NAME
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+    apt update
+    no_command curl apt
+        ;;
 
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update && apt install curl -y
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+    no_command bc yum
+    yumdnf="yum"
+    if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+        yumdnf="dnf"
     fi
-    ;;
-    # debian END
-
-    # centos START
-    centos|fedora|rhel|sangoma)
-    echo System OS is $PRETTY_NAME
-
-    if ! command -v curl >/dev/null 2>&1; then
-       yum install curl -y
-    fi
-    ;;
-    # centos END
-    esac
+    no_command curl $yumdnf
+        ;;
+        esac
 
 # download filebroswer
 #curl -fsSL https://filebrowser.org/get.sh | bash

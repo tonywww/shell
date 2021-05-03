@@ -3,14 +3,24 @@
 cat << EOF
 #
 # caddy2-filebrowser2-install.sh
-# This shell scipts will install Caddy v2 & Filebroswer v2.
-#
 # Support OS: Debian / Ubuntu / CentOS
+#
+# This shell scipts will install Caddy v2 & Filebroswer v2.
 #
 # Before the installation, please make sure your domain has pointed to this VPS's IP."
 # For Google reCAPCHA, please have the key and secret first."
 #
 EOF
+
+no_command() {
+    if ! command -v $1 > /dev/null 2>&1; then
+        if [ -z "$3" ]; then
+        $2 install -y $1
+        else
+        $2 install -y $3
+        fi
+    fi
+}
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -39,14 +49,12 @@ read -p "Please input your Google reCAPCHA Secret Key: " secret
 
 #check OS
 source /etc/os-release
-    case $ID in
-    # debian START
-    debian|ubuntu|devuan)
-    echo System OS is $PRETTY_NAME
+        case $ID in
+        debian|ubuntu|devuan)
+        echo System OS is $PRETTY_NAME
+apt update
+no_command curl apt
 
-    if ! command -v curl >/dev/null 2>&1; then
-       apt update && apt install curl -y
-    fi
 ## download Caddy2
 apt install -y debian-keyring debian-archive-keyring apt-transport-https
 #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
@@ -55,22 +63,22 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | apt-key add 
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee -a /etc/apt/sources.list.d/caddy-stable.list
 apt update
 apt install caddy -y
-    ;;
-    # debian END
+        ;;
 
-    # centos START
-    centos|fedora|rhel|sangoma)
-    echo System OS is $PRETTY_NAME
+        centos|fedora|rhel|sangoma)
+        echo System OS is $PRETTY_NAME
+        no_command bc yum
+        yumdnf="yum"
+        if test "$(echo "$VERSION_ID >= 22" | bc)" -ne 0; then
+            yumdnf="dnf"
+        fi
+no_command curl $yumdnf
 
-    if ! command -v curl >/dev/null 2>&1; then
-       yum install curl -y
-    fi
-yum -y install yum-plugin-copr
-yum -y copr enable @caddy/caddy
-yum -y install caddy
-    ;;
-    # centos END
-    esac
+$yumdnf -y install yum-plugin-copr
+$yumdnf -y copr enable @caddy/caddy
+$yumdnf -y install caddy
+        ;;
+        esac
 
 
 ## create /etc/caddy/Caddyfile
@@ -165,7 +173,7 @@ mkdir -p /var/www/filebrowser/dl
 
 ## create website directories
 mkdir -p /var/www/$domain
-rm -r /var/www/$domain/dl
+rm -rf /var/www/$domain/dl
 ln -s /var/www/filebrowser/dl /var/www/$domain/dl
 
 ## create default files
@@ -190,10 +198,9 @@ echo "This is a test file for /dl" >> /var/www/filebrowser/dl/test-dl.txt
 chmod -R 750 /var/www
 
 
-#### install filebroswer
+#### install filebroswer2
 
-# download filebroswer
-#curl -fsSL https://filebrowser.org/get.sh | bash
+# download filebroswer2
 curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
 # config init

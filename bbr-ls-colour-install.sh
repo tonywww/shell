@@ -3,9 +3,9 @@
 cat << EOF
 #
 # bbr-ls-colour-install.sh
-# This shell scipts will enable BBR and change ls default colourful.
-#
 # Support OS: Debian / Ubuntu / CentOS
+#
+# This shell scipts will enable BBR and change ls default colourful.
 #
 EOF
 
