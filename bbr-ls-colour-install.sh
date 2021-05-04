@@ -5,7 +5,7 @@ cat <<EOF
 # bbr-ls-colour-install.sh
 # Support OS: Debian / Ubuntu / CentOS
 #
-# This shell scipts will enable BBR and change ls default colourful.
+# This shell scipts will enable TCP BBR and change ls default to colourful.
 #
 EOF
 
@@ -24,10 +24,10 @@ Y | y)
 
 ## change system ls colour & add l/ll
 export LS_OPTIONS='--color=auto'
-eval \`dircolors\`
+eval "\$(dircolors)"
 alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -lAhF'
-alias l='ls \$LS_OPTIONS -lahF'
+alias ll='ls \$LS_OPTIONS -lahF'
+alias l='ls \$LS_OPTIONS -lAhF'
 
 ## auto run
 free -h
@@ -40,10 +40,10 @@ EOF
 
 ## change system ls colour & add l/ll
 export LS_OPTIONS='--color=auto'
-eval \`dircolors\`
+eval "\$(dircolors)"
 alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -lAhF'
-alias l='ls \$LS_OPTIONS -lahF'
+alias ll='ls \$LS_OPTIONS -lahF'
+alias l='ls \$LS_OPTIONS -lAhF'
 
 ## auto run
 free -h
@@ -51,44 +51,49 @@ free -h
 EOF
     fi
 
-    cat >>/root/.bashrc <<EOF
+    cat >>~/.bashrc <<EOF
 
 ## change system ls colour & add l/ll
 export LS_OPTIONS='--color=auto'
-eval \`dircolors\`
+eval "\$(dircolors)"
 alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -lAhF'
-alias l='ls \$LS_OPTIONS -lahF'
+alias ll='ls \$LS_OPTIONS -lahF'
+alias l='ls \$LS_OPTIONS -lAhF'
 
 EOF
 
     echo ""
-    echo "The colour for ls and vim has been changed!"
+    echo "The colour for ls and vim have been changed!"
+    echo "You may logout and re-login to get colourful."
     echo ""
-    echo "You may logout and re-login to get the new colour."
-    echo ""
 
-    ## check BBR, if BBR has opened, then exit
-    check=$(lsmod | grep bbr)
-    echo "Checking system...  ${check:0:7}"
-    echo ""
-    if [ "${check:0:7}" != "tcp_bbr" ]; then
+    ## check and set BBR
+    check_bbr_status() {
+        local param=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
+        if [[ x"${param}" == x"bbr" ]]; then
+            return 0
+        else
+            return 1
+        fi
+    }
 
-        ## open BBR
-        lsb_release -a
-        uname -a
+    _version_ge() {
+        test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" == "$1"
+    }
 
-        echo "=========================================================="
-        echo ""
+    check_kernel_version() {
+        local kernel_version=$(uname -r | cut -d- -f1)
+        if _version_ge ${kernel_version} 4.9; then
+            return 0
+        else
+            return 1
+        fi
+    }
 
-        read -p "Is linux version >=4.9.x? [y/n]" answer1
-
-        case $answer1 in
-        Y | y)
-            echo "continue..."
-
-            # install BBR
-            cat >>/etc/sysctl.conf <<EOF
+    sysctl_config() {
+        sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+        sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+        cat >>/etc/sysctl.conf <<EOF
 
 # Open BBR
 net.core.default_qdisc=fq
@@ -96,39 +101,32 @@ net.ipv4.tcp_congestion_control=bbr
 
 EOF
 
-            sysctl -p
+        sysctl -p >/dev/null 2>&1
+    }
 
-            # test BBR
-            echo "=========================================================="
-            sysctl net.ipv4.tcp_available_congestion_control
-            echo "=========================================================="
-            sysctl net.ipv4.tcp_congestion_control
-            echo "=========================================================="
-            lsmod | grep bbr
-            echo ""
-
-            echo "BBR has installed!"
-
-            ## go exit
-            ;;
-
-        *)
-            echo "exit"
-            ;;
-        esac
+    if check_bbr_status; then
+        echo
+        echo "TCP BBR has already been enabled. nothing to do..."
         exit 0
-
-    ## BBR aleady installed
-    else
-        echo "BBR has aleady opened!"
+    fi
+    if check_kernel_version; then
+        echo
+        echo "The kernel version is greater than 4.9, directly setting TCP BBR..."
+        sysctl_config
+        echo "Setting TCP BBR completed..."
         echo ""
-
+        # test BBR
+        sysctl net.ipv4.tcp_available_congestion_control
+        sysctl net.ipv4.tcp_congestion_control
+        lsmod | grep bbr
+        exit 0
+    else
+        echo "The kernel version is lower than 4.9, cannot set TCP BBR."
     fi
 
     ## go exit
     ;;
 
-    ## end
 *)
     echo "exit"
     ;;
