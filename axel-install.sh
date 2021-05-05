@@ -52,6 +52,12 @@ Y | y)
         yum install axel
         ;;
 
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
+        ;;
+
     esac
 
     echo "whereis axel"

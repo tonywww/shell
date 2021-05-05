@@ -29,7 +29,7 @@ Y | y)
     source /etc/os-release
 
     case $ID in
-    debian | ubuntu | devuan)
+    debian | ubuntu)
         echo System OS is $PRETTY_NAME
         apt update
         no_command gzip apt
@@ -46,6 +46,12 @@ Y | y)
         no_command gzip $yumdnf
         $yumdnf install -y epel-release
         $yumdnf install -y openvpn easy-rsa
+        ;;
+
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
         ;;
     esac
 

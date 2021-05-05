@@ -59,7 +59,7 @@ EOF
     #check OS
     source /etc/os-release
     case $ID in
-    debian | ubuntu | devuan)
+    debian | ubuntu)
         echo System OS is $PRETTY_NAME
         apt update
         no_command curl apt
@@ -89,6 +89,12 @@ EOF
 
         $yumdnf -y copr enable @caddy/caddy
         $yumdnf -y install caddy
+        ;;
+
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
         ;;
     esac
 

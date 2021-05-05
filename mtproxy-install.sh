@@ -45,7 +45,7 @@ Y | y)
     source /etc/os-release
 
     case $ID in
-    debian | ubuntu | devuan)
+    debian | ubuntu)
         echo System OS is $PRETTY_NAME
         apt update
         no_command wget apt
@@ -61,6 +61,12 @@ Y | y)
         fi
         no_command wget $yumdnf
         no_command curl $yumdnf
+        ;;
+
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
         ;;
     esac
 

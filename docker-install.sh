@@ -49,6 +49,12 @@ Y | y)
         yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
         yum install -y docker-ce
         ;;
+
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
+        ;;
     esac
 
     systemctl status docker --no-pager

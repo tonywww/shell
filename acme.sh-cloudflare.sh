@@ -111,9 +111,8 @@ EOF
 
         #check OS
         source /etc/os-release
-
         case $ID in
-        debian | ubuntu | devuan)
+        debian | ubuntu)
             echo System OS is $PRETTY_NAME
             apt update
             no_command curl apt
@@ -133,6 +132,12 @@ EOF
             no_command curl $yumdnf
             no_command idn $yumdnf
             no_command cron $yumdnf
+            ;;
+
+        *)
+            echo System OS is $PRETTY_NAME
+            echo Unsupported system OS.
+            exit 2
             ;;
         esac
 
@@ -300,7 +305,7 @@ EOF
     #check OS
     case $ID in
     # debian START
-    debian | ubuntu | devuan)
+    debian | ubuntu)
         chown nobody:nogroup /etc/ssl/acme/$domain_path -R
         ;;
     # debian END
@@ -311,7 +316,7 @@ EOF
         # centos END
     esac
 
-    echo chmod +r /etc/ssl/acme/$domain_path/key.pem
+    chmod +r /etc/ssl/acme/$domain_path/key.pem
 
     cat <<EOF
 
