@@ -78,7 +78,7 @@ EOF
             read -p "Please input your Cloudflare ZONE ID: " cf_zone_id
             if [ -z "$cf_token" ] || [ -z "$cf_zone_id" ]; then
                 cat <<EOF
-Both API tokn and ZONE ID are required.
+Both API token and ZONE ID are required.
 Please try again, or press Ctrl+C to break and exit.
 
 EOF
