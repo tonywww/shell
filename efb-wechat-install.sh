@@ -5,8 +5,13 @@ cat <<EOF
 # efb-wechat-install.sh
 # Support OS: Debian / Ubuntu / CentOS
 #
-# This shell scipts will install EH Forwarder Bot (WeChat for Telegram).
+# This shell scipts will install EH Forwarder Bot WeChat for Telegram.
 #
+
+1. install EH Forwarder Bot Wechat + Python3
+2. install EH Forwarder Bot Wechat + Docker (Docker version)
+3. exit
+
 # EH Forwarder Bot help
 # https://ehforwarderbot.readthedocs.io/zh_CN/latest/
 # EFB Telegram Master help
@@ -28,12 +33,23 @@ no_command() {
     fi
 }
 
-read -p "Please press \"y\" to continue: " answer
+check_command() {
+    if ! command -v $1 >/dev/null 2>&1; then
+        return 0
+    else
+        echo "$1 has already existed. Nothing to do."
+        return 1
+    fi
+}
 
+## check OS
+source /etc/os-release
+
+## make choice
+read -p "Please choose your option: [1-3]" answer
 case $answer in
-Y | y)
-    echo "continue..."
 
+1 | 2)
     # get token & id
     while true; do
         read -p "Please input your telegram bot token: " token
@@ -49,9 +65,78 @@ EOF
         break
     done
 
-    ## check OS
-    source /etc/os-release
+    # create default EFB config files
+    mkdir -p /etc/ehforwarderbot/profiles/default/blueset.telegram
+    mkdir /etc/ehforwarderbot/profiles/default/blueset.wechat
+    #mkdir /etc/ehforwarderbot/profiles/default/milkice.qq
 
+    cat >/etc/ehforwarderbot/profiles/default/config.yaml <<EOF
+master_channel: blueset.telegram
+slave_channels:
+- blueset.wechat
+#- milkice.qq
+EOF
+
+    cat >/etc/ehforwarderbot/profiles/default/blueset.telegram/config.yaml <<EOF
+##################
+# Required items #
+##################
+
+# [Bot Token]
+# This is the token you obtained from @BotFather
+token: "$token"
+
+# [List of Admin User IDs]
+# ETM will only process messages and commands from users
+# listed below. This ID can be obtained from various ways
+# on Telegram.
+admins:
+- $user_id
+# - user_id No.2
+
+##################
+# Optional items #
+##################
+# [Experimental Flags]
+# This section can be used to toggle experimental functionality.
+# These features may be changed or removed at any time.
+# Options in this section is explained afterward.
+flags:
+    send_to_last_chat: disabled
+
+# [Network Configurations]
+# [RPC Interface]
+# Refer to relevant sections afterwards for details.
+EOF
+
+    cat >/etc/ehforwarderbot/profiles/default/blueset.wechat/config.yaml <<EOF
+flags:
+    delete_on_edit: true
+EOF
+
+    ## generate UUID for coolq-token
+    #coolq-token=$(cat /proc/sys/kernel/random/uuid | sed 's/-//g')
+    #
+    #cat > /etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml << EOF
+    #Client: CoolQ
+    #CoolQ:
+    #    type: HTTP
+    #    access_token: $coolq-token
+    #     # keep secret, must be the same with CoolQ
+    #    api_root: http://172.17.0.2:5700/  # CoolQ-http-API address (remote or local)
+    #    host: 172.17.0.1                   # efb-qq-slave listen address
+    #    port: 8000                         # efb-qq-slave listen port
+    #    is_pro: false                      # CoolQ pro is true, otherwise is false
+    #    air_option:
+    #        upload_to_smms: true           # upload pic to sm.ms
+    #
+    #EOF
+
+    chmod -R 757 /etc/ehforwarderbot
+    # # continue check
+    ;;&
+
+1)
     case $ID in
     debian | ubuntu)
         echo System OS is $PRETTY_NAME
@@ -118,7 +203,7 @@ EOF
         cd ~
         wget -O Python-3.9.5.tgz "https://www.python.org/ftp/python/3.9.5/Python-3.9.5.tgz"
         tar -zxvf Python-3.9.5.tgz
-        rm ~/Python-3.9.5.tgz
+        rm Python-3.9.5.tgz
         cd Python-3.9.5
         ./configure --enable-optimizations
         make -j8 && make install
@@ -136,7 +221,7 @@ EOF
         cd ~
         wget -O Python-3.9.5.tgz "https://www.python.org/ftp/python/3.9.5/Python-3.9.5.tgz"
         tar -zxvf Python-3.9.5.tgz
-        rm ~/Python-3.9.5.tgz
+        rm Python-3.9.5.tgz
         cd Python-3.9.5
         ./configure
         make -j8 && make install
@@ -148,79 +233,6 @@ EOF
     pip3 install efb-telegram-master
     pip3 install efb-wechat-slave
     #pip3 install efb-qq-slave
-
-    # create default config files
-    mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/blueset.telegram
-    mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/blueset.wechat
-    #mkdir -p /usr/local/etc/ehforwarderbot/profiles/default/milkice.qq
-
-    cat >/usr/local/etc/ehforwarderbot/profiles/default/config.yaml <<EOF
-master_channel: blueset.telegram
-slave_channels:
-- blueset.wechat
-#- milkice.qq
-EOF
-
-    cat >/usr/local/etc/ehforwarderbot/profiles/default/blueset.telegram/config.yaml <<EOF
-##################
-# Required items #
-##################
-
-# [Bot Token]
-# This is the token you obtained from @BotFather
-token: "$token"
-
-# [List of Admin User IDs]
-# ETM will only process messages and commands from users
-# listed below. This ID can be obtained from various ways
-# on Telegram.
-admins:
-- $user_id
-# - user_id No.2
-
-##################
-# Optional items #
-##################
-# [Experimental Flags]
-# This section can be used to toggle experimental functionality.
-# These features may be changed or removed at any time.
-# Options in this section is explained afterward.
-flags:
-    option_one: 10
-    option_two: false
-    option_three: "foobar"
-
-    send_to_last_chat: disabled
-
-# [Network Configurations]
-# [RPC Interface]
-# Refer to relevant sections afterwards for details.
-EOF
-
-    cat >/usr/local/etc/ehforwarderbot/profiles/default/blueset.wechat/config.yaml <<EOF
-flags:
-    delete_on_edit: true
-EOF
-
-    ## generate UUID for coolq-token
-    #coolq-token=$(cat /proc/sys/kernel/random/uuid | sed 's/-//g')
-    #
-    #cat > /usr/local/etc/ehforwarderbot/profiles/default/milkice.qq/config.yaml << EOF
-    #Client: CoolQ
-    #CoolQ:
-    #    type: HTTP
-    #    access_token: $coolq-token
-    #     # keep secret, must be the same with CoolQ
-    #    api_root: http://172.17.0.2:5700/  # CoolQ-http-API address (remote or local)
-    #    host: 172.17.0.1                   # efb-qq-slave listen address
-    #    port: 8000                         # efb-qq-slave listen port
-    #    is_pro: false                      # CoolQ pro is true, otherwise is false
-    #    air_option:
-    #        upload_to_smms: true           # upload pic to sm.ms
-    #
-    #EOF
-
-    chmod -R 757 /usr/local/etc/ehforwarderbot
 
     ## create /etc/systemd/system/efb.service
     cat >/etc/systemd/system/efb.service <<EOF
@@ -237,7 +249,7 @@ User=nobody
 #NoNewPrivileges=true
 
 Type=simple
-Environment='EFB_PROFILE=default' 'LANG=zh_CN.UTF-8' 'PYTHONIOENCODING=utf_8' 'EFB_DATA_PATH=/usr/local/etc/ehforwarderbot'
+Environment='EFB_PROFILE=default' 'LANG=zh_CN.UTF-8' 'PYTHONIOENCODING=utf_8' 'EFB_DATA_PATH=/etc/ehforwarderbot'
 ExecStart=/usr/local/bin/ehforwarderbot --verbose --profile=${EFB_PROFILE}
 Restart=on-abort
 KillSignal=SIGINT
@@ -256,27 +268,77 @@ EOF
     cat <<EOF
 ====================================================================================
 EFB will display a barcode, please use Wechat in your cellphone to scan it to log in.
-Please wait 10s for efb-wechat starting...
+Please wait 8s for efb-wechat starting...
+
+journalctl -u efb.service -o cat --no-pager -n 50
 ====================================================================================
 EOF
-    sleep 10s
-
-    #systemctl status efb.service --no-pager
+    sleep 8s
     journalctl -u efb.service -o cat --no-pager -n 50
-
-    cat <<EOF
-# ehForwarderBot default profile path:
-/usr/local/etc/ehforwarderbot/profiles/default
-# update
-pip3 install -U ehforwarderbot
-pip3 install -U efb-telegram-master
-pip3 install -U efb-wechat-slave
-EOF
-
-    ## go exit
     ;;
 
-*)
+2)
+    case $ID in
+    debian | ubuntu)
+        echo System OS is $PRETTY_NAME
+        apt update
+        no_command curl apt
+        no_command lsb_release apt lsb-release
+
+        if check_command docker; then
+            apt install -y apt-transport-https ca-certificates gnupg2 software-properties-common
+            curl -fsSL https://download.docker.com/linux/$ID/gpg | apt-key add -
+            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
+            apt update
+            apt install -y docker-ce
+        fi
+        ;;
+
+    centos | fedora | rhel | sangoma)
+        echo System OS is $PRETTY_NAME
+
+        if check_command docker; then
+            yum install -y yum-utils
+            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            yum install -y docker-ce
+            systemctl enable docker
+            systemctl start docker
+        fi
+        ;;
+
+    *)
+        echo System OS is $PRETTY_NAME
+        echo Unsupported system OS.
+        exit 2
+        ;;
+    esac
+
+    #docker pull jemyzhang/ehforwarderbot
+    #docker run -d -v /etc/localtime:/etc/localtime \
+    #    -v /etc/ehforwarderbot:/data \
+    #    --name efb --restart always jemyzhang/ehforwarderbot
+
+    docker pull mikubill/efbwechat
+    docker run -d -v /etc/localtime:/etc/localtime \
+        -v /etc/ehforwarderbot:/opt/app/ehforwarderbot \
+        -e EFB_DATA_PATH=/opt/app/ehforwarderbot \
+        -e LANG=zh_CN.UTF-8 -e PYTHONIOENCODING=utf_8 \
+        --name efb --restart always mikubill/efbwechat
+
+    cat <<EOF
+====================================================================================
+EFB will display a barcode, please use Wechat in your cellphone to scan it to log in.
+Please wait 8s for efb-wechat starting...
+
+docker logs efb
+====================================================================================
+EOF
+    sleep 8s
+    docker logs efb
+    ;;
+
+\
+    *)
     echo "exit"
     ;;
 
