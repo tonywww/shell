@@ -19,6 +19,15 @@ no_command() {
     fi
 }
 
+check_command() {
+    if ! command -v $1 >/dev/null 2>&1; then
+        return 0
+    else
+        echo "$1 has already existed. Nothing to do."
+        return 1
+    fi
+}
+
 read -p "Please press \"y\" to continue: " answer
 
 case $answer in
@@ -35,19 +44,25 @@ Y | y)
         no_command curl apt
         no_command lsb_release apt lsb-release
 
-        apt install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common
-        curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-        apt update
-        apt install -y docker-ce
+        if check_command docker; then
+            apt install -y apt-transport-https ca-certificates gnupg2 software-properties-common
+            curl -fsSL https://download.docker.com/linux/$ID/gpg | apt-key add -
+            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
+            apt update
+            apt install -y docker-ce
+        fi
         ;;
 
     centos | fedora | rhel | sangoma)
         echo System OS is $PRETTY_NAME
 
-        yum install -y yum-utils
-        yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-        yum install -y docker-ce
+        if check_command docker; then
+            yum install -y yum-utils
+            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            yum install -y docker-ce
+            systemctl enable docker
+            systemctl start docker
+        fi
         ;;
 
     *)
@@ -59,6 +74,7 @@ Y | y)
 
     systemctl status docker --no-pager
     echo ""
+    echo "Docker has been installed."
 
     ## go exit
     ;;
