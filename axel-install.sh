@@ -30,7 +30,7 @@ Y | y)
     echo "continue..."
 
     if command -v axel >/dev/null 2>&1; then
-        echo "axel has already installed!"
+        echo "axel has already existed. Nothing to do."
         exit 1
     fi
 
