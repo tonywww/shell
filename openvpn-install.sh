@@ -25,6 +25,11 @@ case $answer in
 Y | y)
     echo "continue..."
 
+    if command -v openvpn >/dev/null 2>&1; then
+        echo "OpenVPN has already existed. Nothing to do."
+        exit 1
+    fi
+
     #check OS
     source /etc/os-release
 
