@@ -49,6 +49,7 @@ Y | y)
         no_command curl $yumdnf
         no_command tar $yumdnf
         no_command pkill $yumdnf procps-ng
+        adduser -r -d /var/www -s /sbin/nologin www-data -U
         ;;
 
     *)
