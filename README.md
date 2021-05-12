@@ -8,7 +8,9 @@ Tested on Debian 9/10 , Ubuntu 18.04/20.04 and Centos 7.
  * Download and run the script under **root** :
 
 ````shell
-wget https://github.com/tonywww/shell/raw/master/*file-name*.sh && chmod +x *file-name*.sh && ./*file-name*.sh
+wget https://github.com/tonywww/shell/raw/master/*file-name*.sh
+chmod +x *file-name*.sh
+./*file-name*.sh
 ````
 
  * Run the script directly under **root** :
