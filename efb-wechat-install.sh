@@ -187,7 +187,7 @@ EOF
     ## install python3
     case $python_install in
     debian_apt)
-        apt install -y python3 python3-pip
+        apt install -y python3 python3-pip python3-pil
         # efb wechat dependencies
         apt install -y ffmpeg libmagic-dev libwebp-dev
         ;;
