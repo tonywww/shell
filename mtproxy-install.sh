@@ -4,8 +4,9 @@ cat <<EOF
 #
 # mtproxy-install.sh
 # Support OS: Debian / Ubuntu / CentOS
+#       arch: amd64 / arm64
 #
-# This shell scipts will install MTProto Proxy Go latest version
+# This shell scipts will install MTProto Proxy Go v2 latest version
 #
 # Document
 # https://github.com/9seconds/mtg
@@ -70,22 +71,50 @@ Y | y)
         ;;
     esac
 
+    # check architecture
+    case $(uname -m) in
+    x86_64)
+        arch=amd64
+        ;;
+    aarch64)
+        arch=arm64
+        ;;
+    *)
+        echo "uname -m"
+        uname -m
+        echo "Unknown architecture."
+        echo "Exit..."
+        exit 2
+        ;;
+    esac
+
     # install mtg
+    cd ~
     curl -s https://api.github.com/repos/9seconds/mtg/releases/latest |
         grep browser_download_url |
-        grep mtg-linux-amd64 |
+        grep linux-$arch.tar.gz |
         cut -d '"' -f 4 |
-        wget -O /usr/local/bin/mtg-linux-amd64 -qi -
+        wget -O mtg-linux-$arch.tar.gz -qi -
 
-    chmod +x /usr/local/bin/mtg-linux-amd64
+    tar zxf mtg-linux-$arch.tar.gz
+    rm mtg-linux-$arch.tar.gz
+    cp mtg-*-linux-$arch/mtg /usr/local/bin
+
+    chmod +x /usr/local/bin/mtg
 
     # generate secret
-    secret=$(/usr/local/bin/mtg-linux-amd64 generate-secret -c $domain tls)
+    secret=$(/usr/local/bin/mtg generate-secret --hex $domain)
+
+    # create config file
+    cat >/etc/mtproxy.toml <<EOF
+secret = "$secret"
+bind-to = "0.0.0.0:$port"
+EOF
 
     # create mtproxy.service
     cat >/etc/systemd/system/mtproxy.service <<EOF
 [Unit]
-Description=MTProxy Go
+Description=MTProxy Go v2
 Documentation=https://github.com/9seconds/mtg
 After=network.target
 
@@ -93,7 +122,7 @@ After=network.target
 User=nobody
 Type=simple
 WorkingDirectory=/usr/local/bin
-ExecStart=/usr/local/bin/mtg-linux-amd64 run -b 0.0.0.0:$port $secret
+ExecStart=/usr/local/bin/mtg run /etc/mtproxy.toml
 Restart=on-failure
 
 [Install]
@@ -107,8 +136,8 @@ EOF
     systemctl status mtproxy.service --no-pager -l
 
     echo "======================================================================="
-    echo '/usr/local/bin/mtg-linux-amd64 '
-    /usr/local/bin/mtg-linux-amd64 --version
+    echo "/usr/local/bin/mtg "
+    /usr/local/bin/mtg --version
     echo ""
     echo -n "Port=  "
     echo -e "\033[5;46;30m"$port"\033[0m"
