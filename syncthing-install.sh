@@ -4,6 +4,7 @@ cat <<EOF
 #
 # syncthing-install.sh
 # Support OS: Debian / Ubuntu / CentOS
+#       arch: amd64 / arm64
 #
 # This shell scipts will install Syncthing as a service.
 #
@@ -58,13 +59,35 @@ Y | y)
         no_command curl $yumdnf
         no_command tar $yumdnf
 
-        rm syncthing-linux*.tar.gz*
-        curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4 | wget -qi -
-        tar xvf syncthing-linux-amd64*.tar.gz
-        rm syncthing-linux*.tar.gz*
+        # check architecture
+        case $(uname -m) in
+        x86_64)
+            arch=linux-amd64
+            ;;
+        aarch64)
+            arch=linux-arm64
+            ;;
+        *)
+            echo "uname -m"
+            uname -m
+            echo "Unknown architecture."
+            echo "Exit..."
+            exit 2
+            ;;
+        esac
+
+        rm syncthing-$arch-*.tar.gz*
+        curl -s https://api.github.com/repos/syncthing/syncthing/releases/latest |
+            grep browser_download_url |
+            grep $arch |
+            cut -d '"' -f 4 |
+            wget -qi -
+
+        tar xvf syncthing-$arch-*.tar.gz
+        rm syncthing-$arch-*.tar.gz*
 
         rm /usr/bin/syncthing -f
-        cp syncthing-linux-amd64-*/syncthing /usr/bin/
+        mv syncthing-$arch-*/syncthing /usr/bin/
         chmod +x /usr/bin/syncthing
 
         # create syncthing.service

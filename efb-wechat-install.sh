@@ -4,14 +4,10 @@ cat <<EOF
 #
 # efb-wechat-install.sh
 # Support OS: Debian / Ubuntu / CentOS
+#       arch: amd64 / arm64
 #
 # This shell scipts will install EH Forwarder Bot WeChat for Telegram.
 #
-
-1. install EH Forwarder Bot Wechat + Python3
-2. install EH Forwarder Bot Wechat + Docker (Docker version)
-3. exit
-
 # EH Forwarder Bot help
 # https://ehforwarderbot.readthedocs.io/zh_CN/latest/
 # EFB Telegram Master help
@@ -20,7 +16,11 @@ cat <<EOF
 # https://github.com/blueset/efb-wechat-slave
 # EFB QQ Slave help
 # https://github.com/milkice233/efb-qq-slave/blob/master/README_zh-CN.rst
-#
+
+1. install EH Forwarder Bot Wechat + Python3
+2. install EH Forwarder Bot Wechat + Docker (Docker version)
+3. exit
+
 EOF
 
 no_command() {
@@ -278,9 +278,24 @@ EOF
     ;;
 
 2)
+    # check architecture
+    case $(uname -m) in
+    x86_64)
+        arch=amd64
+        ;;
+    *)
+        echo "uname -m"
+        uname -m
+        echo "Unsupport architecture. EFB + docker version only support amd64."
+        echo "Please install EFB + Python3 version."
+        exit 2
+        ;;
+    esac
+
     case $ID in
     debian | ubuntu)
         echo System OS is $PRETTY_NAME
+
         apt update
         no_command curl apt
         no_command lsb_release apt lsb-release
@@ -288,7 +303,7 @@ EOF
         if check_command docker; then
             apt install -y apt-transport-https ca-certificates gnupg2 software-properties-common
             curl -fsSL https://download.docker.com/linux/$ID/gpg | apt-key add -
-            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
+            add-apt-repository "deb [arch=$arch] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
             apt update
             apt install -y docker-ce
         fi

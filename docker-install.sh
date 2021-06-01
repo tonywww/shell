@@ -4,6 +4,7 @@ cat <<EOF
 #
 # docker-install.sh
 # Support OS: Debian / Ubuntu / CentOS
+#       arch: amd64 / arm64
 #
 # This shell scipts will install Docker CE.
 #
@@ -40,6 +41,24 @@ Y | y)
     case $ID in
     debian | ubuntu)
         echo System OS is $PRETTY_NAME
+
+        # check architecture
+        case $(uname -m) in
+        x86_64)
+            arch=amd64
+            ;;
+        aarch64)
+            arch=arm64
+            ;;
+        *)
+            echo "uname -m"
+            uname -m
+            echo "Unknown architecture."
+            echo "Exit..."
+            exit 2
+            ;;
+        esac
+
         apt update
         no_command curl apt
         no_command lsb_release apt lsb-release
@@ -47,7 +66,7 @@ Y | y)
         if check_command docker; then
             apt install -y apt-transport-https ca-certificates gnupg2 software-properties-common
             curl -fsSL https://download.docker.com/linux/$ID/gpg | apt-key add -
-            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
+            add-apt-repository "deb [arch=$arch] https://download.docker.com/linux/$ID $(lsb_release -cs) stable"
             apt update
             apt install -y docker-ce
         fi
