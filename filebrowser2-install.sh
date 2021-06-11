@@ -28,6 +28,10 @@ Y | y)
     echo "continue..."
 
     ## input key & secret
+    read -p "Please input listen port number(default:8081):" port
+    if [ ! $port ]; then
+        port=8081
+    fi
     read -p "Please input your Google reCAPCHA Key: " key
     read -p "Please input your Google reCAPCHA Secret: " secret
 
@@ -70,8 +74,7 @@ Y | y)
         mkdir /etc/filebroswer
     fi
     filebrowser -d /etc/filebrowser/filebrowser.db config init
-    filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-        --port 8081 \
+    filebrowser -d /etc/filebrowser/filebrowser.db config set --port $port \
         --baseurl "/file" \
         --root "/var/www/filebrowser/" \
         --log "/var/log/filebrowser.log" \
@@ -113,25 +116,18 @@ EOF
     systemctl restart filebrowser
     systemctl status filebrowser --no-pager
 
-    domain="your-domain.com"
-
     cat <<EOF
+FileBrowser v2 install completed!
 =======================================================================
-Caddy v2 path        : /usr/bin/caddy
-Caddyfile path       : /etc/caddy/Caddyfile
-Web service          : $domain       --> /var/www/$domain
-Caddy browse         : $domain/dl    --> /var/www/filebroswer/dl
+filebroswer       : http://<your-domain.com>:$port
 
-filebroswer v2 path  : /usr/local/bin/filemanager
-filebroswer.db path  : /etc/filebroswer/filebroswer.db
-
-Filebrowser          : $domain/file  --> /var/www/filebroswer
-# Filebrowser share  : $domain/share --> /var/www/filebroswer/share
+filebroswer path  : /usr/local/bin/filemanager
+config file path  : /etc/filebroswer/filebroswer.db
 =======================================================================
 EOF
     echo -n "Filebrowser default username & password: "
     echo -e "\033[5;46;30m"admin $passwd"\033[0m"
-    echo "(Please login http://$domain/file and change the password ASAP!)"
+    echo "(Please login http://<your-domain.com>:$port and change the password ASAP!)"
     echo ""
 
     ## go exit
