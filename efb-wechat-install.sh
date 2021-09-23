@@ -231,7 +231,8 @@ EOF
     # install EFB/ETM(EFB Telegram Master Channel)/EWS(EFB WeChat Slave Channel)
     pip3 install ehforwarderbot
     pip3 install efb-telegram-master
-    pip3 install efb-wechat-slave
+    pip3 install efb-wechat-slave==2.0.4
+    # efb-wechat-slave 2.0.5 has login issue
     #pip3 install efb-qq-slave
 
     ## create /etc/systemd/system/efb.service
@@ -269,12 +270,12 @@ EOF
 ====================================================================================
 EFB will display a barcode, please use Wechat in your cellphone to scan it to log in.
 Please wait 8s for efb-wechat starting...
-
-journalctl -u efb.service -o cat --no-pager -n 50
 ====================================================================================
 EOF
     sleep 8s
-    journalctl -u efb.service -o cat --no-pager -n 50
+    journalctl -u efb.service -o cat --no-pager -n 100
+    echo "Check logs:"
+    echo "journalctl -u efb.service -o cat --no-pager -n 100"
     ;;
 
 2)
@@ -283,11 +284,14 @@ EOF
     x86_64)
         arch=amd64
         ;;
+    aarch64)
+        arch=arm64
+        ;;
     *)
         echo "uname -m"
         uname -m
-        echo "Unsupport architecture. EFB + docker version only support amd64."
-        echo "Please install EFB + Python3 version."
+        echo "Unknown architecture."
+        echo "Exit..."
         exit 2
         ;;
     esac
@@ -328,32 +332,40 @@ EOF
         ;;
     esac
 
-    #docker pull jemyzhang/ehforwarderbot
-    #docker run -d -v /etc/localtime:/etc/localtime \
-    #    -v /etc/ehforwarderbot:/data \
-    #    --name efb --restart always jemyzhang/ehforwarderbot
+    if $arch=amd64; then
+        #docker pull jemyzhang/ehforwarderbot
+        #docker run -d -v /etc/localtime:/etc/localtime \
+        #    -v /etc/ehforwarderbot:/data \
+        #    --name efb --restart always jemyzhang/ehforwarderbot
 
-    docker pull mikubill/efbwechat
-    docker run -d -v /etc/localtime:/etc/localtime \
-        -v /etc/ehforwarderbot:/opt/app/ehforwarderbot \
-        -e EFB_DATA_PATH=/opt/app/ehforwarderbot \
-        -e LANG=zh_CN.UTF-8 -e PYTHONIOENCODING=utf_8 \
-        --name efb --restart always mikubill/efbwechat
+        docker pull mikubill/efbwechat
+        docker run -d -v /etc/localtime:/etc/localtime \
+            -v /etc/ehforwarderbot:/opt/app/ehforwarderbot \
+            -e EFB_DATA_PATH=/opt/app/ehforwarderbot \
+            -e LANG=zh_CN.UTF-8 -e PYTHONIOENCODING=utf_8 \
+            --name efb --restart always mikubill/efbwechat
+    else
+        docker pull akyakya/efb-v2
+        docker run -d -v /etc/localtime:/etc/localtime \
+            -v /usr/local/etc/ehforwarderbot:/root/.ehforwarderbot \
+            -e EFB_DATA_PATH=/root/.ehforwarderbot \
+            -e LANG=zh_CN.UTF-8 -e PYTHONIOENCODING=utf_8 \
+            --name efb --restart always akyakya/efb-v2
+    fi
 
     cat <<EOF
 ====================================================================================
 EFB will display a barcode, please use Wechat in your cellphone to scan it to log in.
 Please wait 8s for efb-wechat starting...
-
-docker logs efb
 ====================================================================================
 EOF
     sleep 8s
     docker logs efb
+    echo "Check logs:"
+    echo "docker logs efb"
     ;;
 
-\
-    *)
+*)
     echo "exit"
     ;;
 
