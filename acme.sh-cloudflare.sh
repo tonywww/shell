@@ -45,6 +45,17 @@ no_command() {
 }
 
 # check acme.sh, if it exist, then issue certificates
+
+cat <<EOF
+
+ Usage: ./acme.sh-cloudflare.sh <command> ... [parameters ...]
+ Commands:
+   -?, --help                   Show this help message
+   -a, --alias <domain-name>    DNS alias mode
+   -r, --reload <'command'>     reload command after renew certificate
+   -u, --auto-upgrade           Enable auto upgrade
+EOF
+
 if [ ! -x "/root/.acme.sh/acme.sh" ]; then
 
     cat <<EOF
@@ -172,14 +183,6 @@ EOF
 fi
 
 cat <<EOF
-#
-# Usage: ./acme.sh-cloudflare.sh <command> ... [parameters ...]
-# Commands:
-#   -?, --help                   Show this help message
-#   -a, --alias <domain-name>    DNS alias mode
-#   -r, --reload <'command'>     reload command after renew certificate
-#   -u, --auto-upgrade           Enable auto upgrade
-#
 #
 # Cloudflare DNS API doesn't support .tk/.cf/.ga/.gq/.ml domains.
 # For those domains should use DNS alias mode.
