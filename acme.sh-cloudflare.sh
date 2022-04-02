@@ -77,26 +77,11 @@ if [ ! -x "/root/.acme.sh/acme.sh" ]; then
 #
 EOF
 
-    read -p "Continue? [y/n} " answer1
+    read -p "Continue? [y/n] " answer1
 
     case $answer1 in
     Y | y)
         echo "continue..."
-
-        # get cloudflare token & zone_id and domain name
-        while true; do
-            read -p "Please input your Cloudflare API token: " cf_token
-            read -p "Please input your Cloudflare ZONE ID: " cf_zone_id
-            if [ -z "$cf_token" ] || [ -z "$cf_zone_id" ]; then
-                cat <<EOF
-Both API token and ZONE ID are required.
-Please try again, or press Ctrl+C to break and exit.
-
-EOF
-                continue
-            fi
-            break
-        done
 
         # choose default server
         cat <<EOF
@@ -152,12 +137,8 @@ EOF
             ;;
         esac
 
-        # install acmd.sh
+        # install acme.sh
         curl https://get.acme.sh | sh
-
-        # export CF DNS API
-        export CF_Token="$cf_token"
-        export CF_Zone_ID="$cf_zone_id"
 
         # set default server
         ~/.acme.sh/acme.sh --set-default-ca --server $server
@@ -187,9 +168,14 @@ cat <<EOF
 # Cloudflare DNS API doesn't support .tk/.cf/.ga/.gq/.ml domains.
 # For those domains should use DNS alias mode.
 #
+# For example, if you use DNS alias mode, first you must set CNAME like bellow:
+#
+#   CNAME:
+#   _acme-challenge.example.com
+#      =>   _acme-challenge.aliasDomainForValidationOnly.com
+#
 # DNS alias mode documents:
-# https://github.com/acmesh-official/acme.sh#11-issue-wildcard-certificates
-# https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode#6-challenge-alias-or-domain-alias
+# https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode
 #
 1. issue ZeroSSL 90 days certificates (Default)*
 2. issue BuyPass 180 days certificates
@@ -273,9 +259,43 @@ EOF
         domain_path=wildcard.$domain
         subdomain=*.$domain
     else
+        read -p "Do you want both $domain and www.$domain in the certificate? [y/n] " www
+
+        case $www in
+        N | n) ;;
+
+        *)
+            subdomain=www.$domain
+            ;;
+        esac
+
         domain_path=$domain
-        subdomain=www.$domain
     fi
+
+    # get cloudflare token & zone_id and domain name
+    while true; do
+        read -p "Please input your Cloudflare API token: " cf_token
+
+        if [ -n "$alias" ]; then
+            read -p "Please input the ZONE ID for alias $alias: " cf_zone_id
+        else
+            read -p "Please input the ZONE ID for $domain: " cf_zone_id
+        fi
+
+        if [ -z "$cf_token" ] || [ -z "$cf_zone_id" ]; then
+            cat <<EOF
+Both API token and ZONE ID are required.
+Please try again, or press Ctrl+C to break and exit.
+
+EOF
+            continue
+        fi
+        break
+    done
+
+    # export CF DNS API
+    export CF_Token="$cf_token"
+    export CF_Zone_ID="$cf_zone_id"
 
     # issue certificates
     if [ -n "$alias" ]; then
@@ -335,6 +355,11 @@ EOF
 
 List all certificates:
 ~/.acme.sh/acme.sh --list
+
+EOF
+    ~/.acme.sh/acme.sh --list
+
+    cat <<EOF
 
 Manual renewal:
 ~/.acme.sh/acme.sh --renew -d <domain-name>
