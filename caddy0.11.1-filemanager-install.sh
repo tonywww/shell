@@ -72,7 +72,7 @@ EOF
     done
 
     ## download caddy v0.11.1 with filemanager
-    wget -O /usr/local/bin/caddy https://git.io/caddy0
+    wget -O /usr/local/bin/caddy https://raw.githubusercontent.com/tonywww/caddy/master/caddy-0.11.1-filemanager
     chmod +x /usr/local/bin/caddy
 
     ## create etc & ssl path
@@ -99,6 +99,16 @@ $domain {
 
 #    bind 127.0.0.1
     tls admin@$domain
+
+## get test certificate to avoid Duplicate Certificate Limit
+#    tls {
+#        ca https://acme-staging-v02.api.letsencrypt.org/directory
+#    }
+
+## if use a custom SSL certificate, auto redirect HTTP to HTTPS will be disabled
+#    redir https://{host}{uri}
+#    tls /etc/ssl/acme/$domain/fullchain.pem  /etc/ssl/acme/$domain/key.pem
+
     gzip
     root /var/www/$domain/
     browse /dl/
@@ -116,9 +126,12 @@ $domain {
         database /etc/ssl/caddy/filemanager/$domain.db
         locale         zh-cn
         allow_commands false
-##        recaptcha_key       ??
-##        recaptcha_secret    ??
-##        alternative_recaptcha
+## test key & secret
+recaptcha_key    6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+recaptcha_secret 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+#        recaptcha_key       ??
+#        recaptcha_secret    ??
+        alternative_recaptcha
     }
 
     filemanager /share var/www/filebrowser/share/ {
@@ -174,9 +187,21 @@ EOF
     fi
 
     cat >/var/www/$domain/index.html <<EOF
-<font size="8" face="Comic Sans MS"><center>
--- Welcome to $domain! --
-</center></font>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html" />
+<script language="javascript">host=location.hostname; // get host name </script>   
+</head>
+<body>
+
+<center>
+<font size="8" face="Comic Sans MS">
+-- Welcome to <script language="javascript">document.write(""+host)</script>! --
+</font>
+</center>
+
+</body>
+</html>
 EOF
 
     echo "This is a test file for file browser" >>/var/www/filebrowser/test-filebrowser.txt
@@ -205,7 +230,7 @@ Group=www-data
 Environment=CADDYPATH=/etc/ssl/caddy
 
 ; Always set "-root" to something safe in case it gets forgotten in the Caddyfile.
-ExecStart=/usr/local/bin/caddy -log stdout -agree=true -conf=/etc/caddy/Caddyfile -root=/var/tmp
+ExecStart=/usr/local/bin/caddy -log stdout -agree=true -conf=/etc/caddy/Caddyfile -http-port=80 -https-port=443 -root=/var/tmp
 ExecReload=/bin/kill -USR1 $MAINPID
 
 ; Use graceful shutdown with a reasonable timeout
