@@ -4,17 +4,17 @@ while [ $# -gt 0 ]; do
     case $1 in
     -\? | --help)
         cat <<EOF
-Usage: ./acme.sh-cloudflare.sh <command> ... [parameters ...]
+Usage: ./acme.sh-cloudflare.sh <command> [parameters]
 Commands:
   -?, --help                   Show this help message
-  -a, --alias <domain-name>    DNS alias mode
+  -f, --force                  Force install, force cert renewal or override sudo restrictions.
   -r, --reload <'command'>     Reload command after renew certificate
   -u, --auto-upgrade           Enable auto upgrade
 EOF
         exit 1
         ;;
-    -a | --alias)
-        alias=$2
+    -f | --force)
+        force="--force"
         shift
         ;;
     -r | --reload)
@@ -48,12 +48,12 @@ no_command() {
 
 cat <<EOF
 
- Usage: ./acme.sh-cloudflare.sh <command> ... [parameters ...]
- Commands:
-   -?, --help                   Show this help message
-   -a, --alias <domain-name>    DNS alias mode
-   -r, --reload <'command'>     reload command after renew certificate
-   -u, --auto-upgrade           Enable auto upgrade
+Usage: ./acme.sh-cloudflare.sh <command> [parameters]
+Commands:
+  -?, --help                   Show this help message
+  -f, --force                  Force install, force cert renewal or override sudo restrictions.
+  -r, --reload <'command'>     reload command after renew certificate
+  -u, --auto-upgrade           Enable auto upgrade
 EOF
 
 if [ ! -x "/root/.acme.sh/acme.sh" ]; then
@@ -177,6 +177,38 @@ cat <<EOF
 # DNS alias mode documents:
 # https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode
 #
+
+EOF
+
+read -p "Do you want use DNS alias mode? [y/n] " aliasmode
+
+case $aliasmode in
+y | Y)
+
+    # get alias domain
+    while true; do
+        read -p "Please input your DNS alias domain: " alias
+        if [ -z "$alias" ]; then
+            cat <<EOF
+DNS alias domain name is required.
+Please try again, or press Ctrl+C to break and exit.
+
+EOF
+            continue
+        fi
+        break
+    done
+
+    alias="--challenge-alias $alias"
+    ;;
+
+*)
+    echo "DNS alias mode: off"
+    ;;
+esac
+
+cat <<EOF
+
 1. issue ZeroSSL 90 days certificates (Default)*
 2. issue BuyPass 180 days certificates
 3. issue Let’s encrypt 90 days certificates
@@ -277,7 +309,7 @@ EOF
         read -p "Please input your Cloudflare API token: " cf_token
 
         if [ -n "$alias" ]; then
-            read -p "Please input the ZONE ID for alias $alias: " cf_zone_id
+            read -p "Please input the ZONE ID for $alias: " cf_zone_id
         else
             read -p "Please input the ZONE ID for $domain: " cf_zone_id
         fi
@@ -298,31 +330,21 @@ EOF
     export CF_Zone_ID="$cf_zone_id"
 
     # issue certificates
-    if [ -n "$alias" ]; then
-        ~/.acme.sh/acme.sh --issue --dns dns_cf \
-            --challenge-alias $alias \
-            --server $issuer --days $days \
-            -d $domain -d $subdomain
-    else
-        ~/.acme.sh/acme.sh --issue --dns dns_cf \
-            --server $issuer --days $days \
-            -d $domain -d $subdomain
-    fi
+    ~/.acme.sh/acme.sh --issue --dns dns_cf --dnssleep 10 \
+        $alias $force \
+        --server $issuer --days $days \
+        -d $domain -d $subdomain
 
     # install certificates to /etc/ssl/acme/
     mkdir /etc/ssl/acme/$domain_path -p
-    if [ -n "$reload" ]; then
-        ~/.acme.sh/acme.sh --install-cert -d $domain \
-            --reloadcmd "$reload" \
-            --cert-file /etc/ssl/acme/$domain_path/cert.pem \
-            --key-file /etc/ssl/acme/$domain_path/key.pem \
-            --fullchain-file /etc/ssl/acme/$domain_path/fullchain.pem
-    else
-        ~/.acme.sh/acme.sh --install-cert -d $domain \
-            --cert-file /etc/ssl/acme/$domain_path/cert.pem \
-            --key-file /etc/ssl/acme/$domain_path/key.pem \
-            --fullchain-file /etc/ssl/acme/$domain_path/fullchain.pem
+    if [ ! -n "$reload" ]; then
+        reload="(systemctl restart xray ; systemctl restart caddy)"
     fi
+    ~/.acme.sh/acme.sh --install-cert -d $domain \
+        --reloadcmd "$reload" \
+        --cert-file /etc/ssl/acme/$domain_path/cert.pem \
+        --key-file /etc/ssl/acme/$domain_path/key.pem \
+        --fullchain-file /etc/ssl/acme/$domain_path/fullchain.pem
 
     # change user & group, add read permission
     #check OS
