@@ -47,6 +47,21 @@ EOF
     read -p "Please input your Google reCAPCHA Site Key: " key
     read -p "Please input your Google reCAPCHA Secret Key: " secret
 
+
+
+
+
+        if [ -z "$key" ] || [ -z "$secret" ]; then
+            key=6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+            secret=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+            echo "Set test keys for Google reCAPCHA."
+        fi
+
+
+
+
+
+
     # check previous caddy v1 service
     if [ -f "/etc/systemd/system/caddy.service" ]; then
         systemctl stop caddy.service
@@ -66,10 +81,8 @@ EOF
 
         ## download Caddy2
         apt install -y debian-keyring debian-archive-keyring apt-transport-https
-        #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | apt-key add -
-        #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&version=any-version' | tee -a /etc/apt/sources.list.d/caddy-stable.list
-        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | apt-key add -
-        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee -a /etc/apt/sources.list.d/caddy-stable.list
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
         apt update
         apt install caddy -y
         ;;
@@ -133,7 +146,9 @@ $domain {
 
 #    bind 127.0.0.1
 #    tls /etc/ssl/acme/your-domain/cert.pem /etc/ssl/acme/your-domain/key.pem
-
+#    tls {
+#        on_demand
+#    }
 
 # Set this path to your site's directory.
     root * /var/www/$domain/
@@ -201,9 +216,21 @@ EOF
     fi
 
     cat >/var/www/$domain/index.html <<EOF
-<font size="8" face="Comic Sans MS"><center>
--- Welcome to $domain! --
-</center></font>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html" />
+<script language="javascript">host=location.hostname; // get host name </script>   
+</head>
+<body>
+
+<center>
+<font size="8" face="Comic Sans MS">
+-- Welcome to <script language="javascript">document.write(""+host)</script>! --
+</font>
+</center>
+
+</body>
+</html>
 EOF
 
     echo "This is a test file for file browser" >>/var/www/filebrowser/test-filebrowser.txt
