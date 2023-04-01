@@ -30,16 +30,16 @@ Y | y)
     echo "continue..."
 
     ## input fake tls domain and port
-    echo "(For example: freenom.com / bing.com / sohu.com ...)"
+    echo "(For example: oracle.com / vultr.com / digitalocean.com / google.com ...)"
     read -p "Please input the fake TLS domain name(default:microsoft.com):" domain
     if [ ! $domain ]; then
-        domain=mocrosoft.com
+        domain=microsoft.com
     fi
     echo "fake TLS domain="$domain
 
-    read -p "Please input listen port number(default:443):" port
+    read -p "Please input listen port number(default:8443):" port
     if [ ! $port ]; then
-        port=443
+        port=8443
     fi
 
     #check OS
