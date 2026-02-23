@@ -7,8 +7,8 @@ cat <<EOF
 #
 # This shell scipts will install Caddy v2 & Filebroswer v2.
 #
-# Before the installation, please make sure your domain has pointed to this VPS's IP."
-# For Google reCAPCHA, please have the key and secret first."
+# Before the installation, please make sure your domain has pointed to this VPS's IP.
+# To use Google reCAPCHA, please have the key and secret ready.
 #
 EOF
 
@@ -28,9 +28,6 @@ case $answer in
 Y | y)
     echo "continue..."
 
-    #### install Caddy2
-
-    ## get domain
     while true; do
         read -p "Please input your domain name (without www.): " domain
         if [ -z "$domain" ]; then
@@ -44,23 +41,39 @@ EOF
         break
     done
 
-    read -p "Please input your Google reCAPCHA Site Key: " key
-    read -p "Please input your Google reCAPCHA Secret Key: " secret
+    read -p "Please input listen port number(default:8081):" port
+    if [ ! $port ]; then
+        port=8081
+    fi
+    echo "listen port="$port
 
+    read -p "Do you want File Browser listens on 0.0.0.0?(default:127.0.0.1) [y/n]" address
+    if [[ "$address" = "Y" || "$address" = "y" ]]; then
+        address="0.0.0.0"
+    else
+        address="127.0.0.1"
+    fi
+    echo "listen address="$address
 
+    read -p "Do you want user Google reCAPCHA for File Browser? [y/n] " recapcha
+    if [[ "$recapcha" = "Y" || "$recapcha" = "y" ]]; then
+        while true; do
+            read -p "Please input your Google reCAPCHA Key: " key
+            read -p "Please input your Google reCAPCHA Secret: " secret
+            if [ -z "$key" ] || [ -z "$secret" ]; then
+                cat <<EOF
 
+Both reCAPCHA key and secret are required.
+Please try again, or press Ctrl+C to break and exit.
 
+EOF
+                continue
+            fi
+        break
+        done
+    fi
 
-        if [ -z "$key" ] || [ -z "$secret" ]; then
-            key=6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
-            secret=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
-            echo "Set test keys for Google reCAPCHA."
-        fi
-
-
-
-
-
+    #### install Caddy2
 
     # check previous caddy v1 service
     if [ -f "/etc/systemd/system/caddy.service" ]; then
@@ -80,14 +93,16 @@ EOF
         no_command curl apt
 
         ## download Caddy2
-        apt install -y debian-keyring debian-archive-keyring apt-transport-https
+        apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+        chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        chmod o+r /etc/apt/sources.list.d/caddy-stable.list
         apt update
-        apt install caddy -y
+        apt install -y caddy
         ;;
 
-    centos | fedora | rhel | sangoma)
+    centos | rhel)
         echo System OS is $PRETTY_NAME
         no_command bc yum
         yumdnf="yum"
@@ -100,6 +115,7 @@ EOF
         no_command curl $yumdnf
         adduser -r -d /var/www -s /sbin/nologin www-data -U
 
+        $yumdnf -y install dnf-plugins-core
         $yumdnf -y copr enable @caddy/caddy
         $yumdnf -y install caddy
         ;;
@@ -124,31 +140,48 @@ EOF
 # domain name.
 
 
-# Global options
-    {
+## Global options
+{
+# accept real client IP addresses from upstream proxies
+    servers {
+        listener_wrappers {
+            proxy_protocol {
+                # Optional: Only trust PROXY headers from specific IP ranges
+                allow 10.0.0.1/24
+            }
+            tls
+        }
+        # Configures Caddy to trust the IPs within the PROXY header
+        trusted_proxies static 10.0.0.1/24 127.0.0.1
+    }
 # set defalut CA to ZeroSSL
-        acme_ca https://acme.zerossl.com/v2/DV90
-        email   admin@$domain
-# work with sniproxy change port
+#        acme_ca https://acme.zerossl.com/v2/DV90
+#        email   admin@$domain
+# change default port
 #        http_port  81
 #        https_port 444
-# auto https off
+# auto_https
+#   off: Disables both certificate automation and HTTP-to-HTTPS redirects.
+#   disable_redirects: Disable only HTTP-to-HTTPS redirects.
+#   disable_certs: Disable only certificate automation.
 #        auto_https off
-# auto http redirect to https off
-#        auto_https disable_redirects
-    }
+}
+
+
+## http to https redir START
+#http://$domain {
+#    redir https://{host}{uri}
+#}
+## http to https redir END
 
 
 ## $domain config START
-
 #http://$domain, https://$domain {
 $domain {
 
 #    bind 127.0.0.1
 #    tls /etc/ssl/acme/your-domain/cert.pem /etc/ssl/acme/your-domain/key.pem
-#    tls {
-#        on_demand
-#    }
+
 
 # Set this path to your site's directory.
     root * /var/www/$domain/
@@ -157,39 +190,41 @@ $domain {
 # Enable the static file server.
     file_server
 
-# set /dl browser
+# Set /dl browser
     @dl {
         path /dl /dl/
     }
     file_server @dl browse
 
 
-# Another common task is to set up a reverse proxy:
-# reverse_proxy localhost:8080
+# Set up a reverse proxy:
 
 # filebrowser v2
-    @file {
-        path /file /file/*
+    handle_path /file* {
+        reverse_proxy 127.0.0.1:$port
     }
-    reverse_proxy @file localhost:8081
 
+# nextcloud
+#    handle_path /cloud* {
+#        reverse_proxy 127.0.0.1:9001
+#    }
 
-# Or serve a PHP site through php-fpm:
-#php_fastcgi localhost:9000
-#php_fastcgi unix//run/php/php7.0-fpm.sock
+# Serve a PHP site through php-fpm:
+#php_fastcgi unix//run/php/php-fpm.sock
 #### php install: apt install php-fpm
-
 
 }
 ## $domain config END
 
 
-
-## syncthing
+## Syncthing
 #https://$domain:your-port {
-#    reverse_proxy localhost:8384
-#   }
-
+#    tls /etc/ssl/acme/your-domain/cert.pem /etc/ssl/acme/your-domain/key.pem
+#    reverse_proxy 127.0.0.1:8384 {
+#        # Changes the Host header to "127.0.0.1:8384"
+#        header_up Host {http.reverse_proxy.upstream.hostport}
+#    }
+#}
 
 
 # Refer to the Caddy docs for more information:
@@ -219,15 +254,26 @@ EOF
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html" />
+<meta name="viewport" content="width=device-width" initial-scale="1"/>
 <script language="javascript">host=location.hostname; // get host name </script>   
 </head>
+<style>
+.comic-text {font-family: Comic Sans MS, Arial;}
+.arial-text {font-family: Arial;}
+</style>
 <body>
 
 <center>
-<font size="8" face="Comic Sans MS">
+<br>
+<p style="font-size: 35px;" class="comic-text">
 -- Welcome to <script language="javascript">document.write(""+host)</script>! --
-</font>
+</p>
+<br><br>
+<p style="font-size: 16px;" class="arial-text">
+<a href="file/">File Browser</a> &emsp;
+<a href="dl/">Download</a>
 </center>
+</p>
 
 </body>
 </html>
@@ -236,10 +282,7 @@ EOF
     echo "This is a test file for file browser" >>/var/www/filebrowser/test-filebrowser.txt
     echo "This is a test file for /share" >>/var/www/filebrowser/share/test-share.txt
     echo "This is a test file for /dl" >>/var/www/filebrowser/dl/test-dl.txt
-
-    #chmod -R 555 /var/www
-    #chmod -R 757 /var/www/filebrowser
-    chmod -R 750 /var/www
+    chmod -R 755 /var/www
 
     #### install filebroswer2
 
@@ -253,20 +296,27 @@ EOF
     else
         mkdir /etc/filebroswer
     fi
+
+    # config filebroswer2
     filebrowser -d /etc/filebrowser/filebrowser.db config init
-    filebrowser -d /etc/filebrowser/filebrowser.db config set --address 127.0.0.1 \
-        --port 8081 \
-        --baseurl "/file" \
-        --root "/var/www/filebrowser/" \
-        --log "/var/log/filebrowser.log" \
-        --auth.method=json \
-        --recaptcha.host https://recaptcha.net \
-        --recaptcha.key "$key" \
-        --recaptcha.secret "$secret" \
-        --locale "zh-cn"
+
+        filebrowser -d /etc/filebrowser/filebrowser.db config set \
+            --address $address --port $port \
+            --baseurl "/file" \
+            --root "/var/www/filebrowser/" \
+            --log "/var/log/filebrowser.log" \
+            --auth.method=json \
+            --locale "zh-cn"
+
+    if [[ "$recapcha" = "Y" || "$recapcha" = "y" ]]; then
+        filebrowser -d /etc/filebrowser/filebrowser.db config set \
+            --recaptcha.host https://recaptcha.net \
+            --recaptcha.key "$key" \
+            --recaptcha.secret "$secret"
+    fi
 
     # set user admin and password
-    passwd=$(openssl rand -base64 6)
+    passwd=$(openssl rand -base64 9)
     filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
 
     chown -R www-data:www-data /var/www

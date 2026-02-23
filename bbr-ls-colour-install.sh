@@ -25,42 +25,18 @@ Y | y)
 ## change system ls colour & add l/ll
 export LS_OPTIONS='--color=auto'
 eval "\$(dircolors)"
-alias ls='ls \$LS_OPTIONS'
+alias ls='ls \$LS_OPTIONS -F'
 alias ll='ls \$LS_OPTIONS -lahF'
 alias l='ls \$LS_OPTIONS -lAhF'
 
 ## auto run
+echo
+df -h
+echo
 free -h
 
 EOF
     fi
-
-    if [ -f "/etc/bashrc" ]; then
-        cat >>/etc/bashrc <<EOF
-
-## change system ls colour & add l/ll
-export LS_OPTIONS='--color=auto'
-eval "\$(dircolors)"
-alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -lahF'
-alias l='ls \$LS_OPTIONS -lAhF'
-
-## auto run
-free -h
-
-EOF
-    fi
-
-    cat >>~/.bashrc <<EOF
-
-## change system ls colour & add l/ll
-export LS_OPTIONS='--color=auto'
-eval "\$(dircolors)"
-alias ls='ls \$LS_OPTIONS'
-alias ll='ls \$LS_OPTIONS -lahF'
-alias l='ls \$LS_OPTIONS -lAhF'
-
-EOF
 
     echo ""
     echo "The colour for ls and vim have been changed!"

@@ -7,7 +7,7 @@ cat <<EOF
 #
 # This shell scipts will install Filebroswer v2.
 #
-# For Google reCAPCHA, please have the key and secret first.
+# To use Google reCAPCHA, please have the key and secret ready.
 #
 EOF
 
@@ -27,13 +27,37 @@ case $answer in
 Y | y)
     echo "continue..."
 
-    ## input key & secret
     read -p "Please input listen port number(default:8081):" port
     if [ ! $port ]; then
         port=8081
     fi
-    read -p "Please input your Google reCAPCHA Key: " key
-    read -p "Please input your Google reCAPCHA Secret: " secret
+    echo "listen port="$port
+
+    read -p "Do you want File Browser listens on 0.0.0.0?(default:127.0.0.1) [y/n]" address
+    if [[ "$address" = "Y" || "$address" = "y" ]]; then
+        address="0.0.0.0"
+    else
+        address="127.0.0.1"
+    fi
+    echo "listen address="$address
+
+    read -p "Do you want user Google reCAPCHA for File Browser? [y/n] " recapcha
+    if [[ "$recapcha" = "Y" || "$recapcha" = "y" ]]; then
+        while true; do
+            read -p "Please input your Google reCAPCHA Key: " key
+            read -p "Please input your Google reCAPCHA Secret: " secret
+            if [ -z "$key" ] || [ -z "$secret" ]; then
+                cat <<EOF
+
+Both reCAPCHA key and secret are required.
+Please try again, or press Ctrl+C to break and exit.
+
+EOF
+                continue
+            fi
+        break
+        done
+    fi
 
     #check OS
     source /etc/os-release
@@ -63,7 +87,7 @@ Y | y)
         ;;
     esac
 
-    # download filebroswer
+    # download filebroswer2
     curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
     # config init
@@ -73,24 +97,32 @@ Y | y)
     else
         mkdir /etc/filebroswer
     fi
-    filebrowser -d /etc/filebrowser/filebrowser.db config init
-    filebrowser -d /etc/filebrowser/filebrowser.db config set --port $port \
-        --baseurl "/file" \
-        --root "/var/www/filebrowser/" \
-        --log "/var/log/filebrowser.log" \
-        --auth.method=json \
-        --recaptcha.host https://recaptcha.net \
-        --recaptcha.key "$key" \
-        --recaptcha.secret "$secret" \
-        --locale "zh-cn"
 
-    # add user tony
-    passwd=$(openssl rand -base64 6)
+    # config filebroswer2
+    filebrowser -d /etc/filebrowser/filebrowser.db config init
+
+        filebrowser -d /etc/filebrowser/filebrowser.db config set \
+            --address $address --port $port \
+            --baseurl "/file" \
+            --root "/var/www/filebrowser/" \
+            --log "/var/log/filebrowser.log" \
+            --auth.method=json \
+            --locale "zh-cn"
+
+    if [[ "$recapcha" = "Y" || "$recapcha" = "y" ]]; then
+        filebrowser -d /etc/filebrowser/filebrowser.db config set \
+            --recaptcha.host https://recaptcha.net \
+            --recaptcha.key "$key" \
+            --recaptcha.secret "$secret"
+    fi
+
+    # set user admin and password
+    passwd=$(openssl rand -base64 9)
     filebrowser -d /etc/filebrowser/filebrowser.db users add admin $passwd --perm.admin
 
     mkdir -p /var/www/filebrowser/dl
     mkdir -p /var/www/filebrowser/share
-    chmod -R 750 /var/www
+    chmod -R 755 /var/www
 
     chown -R www-data:www-data /var/www
     chown -R www-data:www-data /etc/filebrowser
@@ -119,7 +151,7 @@ EOF
     cat <<EOF
 FileBrowser v2 install completed!
 =======================================================================
-filebroswer       : http://<your-domain.com>:$port
+filebroswer       : $address:$port
 
 filebroswer path  : /usr/local/bin/filemanager
 config file path  : /etc/filebroswer/filebroswer.db
@@ -127,7 +159,7 @@ config file path  : /etc/filebroswer/filebroswer.db
 EOF
     echo -n "Filebrowser default username & password: "
     echo -e "\033[5;46;30m"admin $passwd"\033[0m"
-    echo "(Please login http://<your-domain.com>:$port and change the password ASAP!)"
+    echo "(Please login and change the password ASAP!)"
     echo ""
 
     ## go exit

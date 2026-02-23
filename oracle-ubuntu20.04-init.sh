@@ -2,21 +2,22 @@
 
 cat <<EOF
 #
-# oracle-ubuntu20.04-init.sh
+# oracle-ubuntu-init.sh
 #
-# This shell scipts use to initial Oracle VPS Ubuntu 20.04 LTS.
+# This shell scipts use to initial Oracle VPS Ubuntu 24.04 LTS.
 # 1) set l='ls -lAhF' and ll='ls -lahF'
 # 2) remove oracle-cloud-agent
 # 3) remove system firewall
-# 4) disable systemd-resolved
-# 5) install softwares: nano curl axel inetutils-ping net-tools cron
-# 6) set timezone to US/Eastern
-# 7) setup TCP BBR
-# 8) set 2G SWAP
+# 4) install softwares: nano curl axel inetutils-ping net-tools cron
+# 5) set timezone to America/New_York
+# 6) setup TCP BBR
+# 7) set 2G SWAP
 #
 # THIS IS IMPORTANT! You must run the entire process as "root"!
 #
 EOF
+
+# 4) disable systemd-resolved
 
 read -p "Please press \"y\" to continue: " answer
 
@@ -30,7 +31,18 @@ Y | y)
     sed -i "s/\(^alias ll='ls \).*/\1-lahF'/" /home/ubuntu/.bashrc
     sed -i "s/\(^alias l='ls \).*/\1-lAhF'/" /home/ubuntu/.bashrc
 
+    cat >>/etc/bash.bashrc <<EOF
+
+## auto run
+echo
+df -h
+echo
+free -h
+
+EOF
+
     # remove oracle-cloud-agent
+    snap stop oracle-cloud-agent
     snap disable oracle-cloud-agent
     snap remove oracle-cloud-agent
 
@@ -46,23 +58,23 @@ Y | y)
     apt purge netfilter-persistent -y
 
     # Disable systemd-resolve as it binds to port 53 due to which Dnsmasq will be effected.
-    systemctl stop systemd-resolved
-    systemctl disable systemd-resolved
+#    systemctl stop systemd-resolved
+#    systemctl disable systemd-resolved
 
     # Also, remove the sysmlinked resolv.conf file
     # /etc/resolv.conf -> ../run/systemd/resolve/stub-resolv.conf
-    rm /etc/resolv.conf
+#    rm /etc/resolv.conf
     #Then create new resolv.conf file
-    echo "nameserver 8.8.8.8" >/etc/resolv.conf
-    echo "nameserver 1.1.1.1" >>/etc/resolv.conf
+#    echo "nameserver 8.8.8.8" >/etc/resolv.conf
+#    echo "nameserver 1.1.1.1" >>/etc/resolv.conf
 
     # install tools
     apt update
     apt install -y nano curl axel inetutils-ping net-tools cron
 
     # change timezone
-    timedatectl set-timezone US/Eastern
-    echo "Timezone has been changed to US/Eastern."
+    timedatectl set-timezone America/New_York
+    echo "Timezone has been changed to America/New_York."
     echo ""
 
     ## check and set BBR
@@ -96,15 +108,15 @@ EOF
     lsmod | grep bbr
 
     # check and set SWAP
-    if [ -f "/var/swapfile" ]; then
-        echo "/var/swapfile already exist!"
+    if [ -f "/swapfile" ]; then
+        echo "/swapfile already exist!"
     else
         # create 2G SWAP
-        fallocate -l 2G /var/swapfile
-        chmod 600 /var/swapfile
-        mkswap /var/swapfile
-        swapon /var/swapfile
-        echo "/var/swapfile swap swap defaults 0 0" >>/etc/fstab
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        echo "/swapfile swap swap defaults 0 0" >>/etc/fstab
         echo "2G SWAP file has been created!"
     fi
     free -h

@@ -38,17 +38,19 @@ Y | y)
         no_command curl apt
 
         # Add the release PGP keys:
-        curl -s https://syncthing.net/release-key.txt | apt-key add -
+        mkdir -p /etc/apt/keyrings
+        curl -L -o /etc/apt/keyrings/syncthing-archive-keyring.gpg https://syncthing.net/release-key.gpg
 
-        # Add the "stable" channel to your APT sources:
-        echo "deb https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.list.d/syncthing.list
+        # Add the "stable-v2" channel to your APT sources:
+        echo "deb [signed-by=/etc/apt/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable-v2" | tee /etc/apt/sources.list.d/syncthing.list
 
         # Update and install syncthing:
+        apt update
         apt install -y apt-transport-https
-        apt update && apt install -y syncthing
+        apt install -y syncthing
         ;;
 
-    centos | fedora | rhel | sangoma)
+    centos | fedora | rhel)
         echo System OS is $PRETTY_NAME
         no_command bc yum
         yumdnf="yum"
