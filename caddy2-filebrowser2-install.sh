@@ -306,6 +306,8 @@ EOF
             --root "/var/www/filebrowser/" \
             --log "/var/log/filebrowser.log" \
             --auth.method=json \
+            --singleClick \
+            --minimumPasswordLength "6" \
             --locale "zh-cn"
 
     if [[ "$recapcha" = "Y" || "$recapcha" = "y" ]]; then
