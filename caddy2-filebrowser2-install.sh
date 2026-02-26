@@ -27,19 +27,15 @@ read -p "Please press \"y\" to continue: " answer
 case $answer in
 Y | y)
     echo "continue..."
+    echo "(If leave the domain name empty, Caddy will runs http server only.)"
+    read -p "Please input your domain name (without www.): " domain
 
-    while true; do
-        read -p "Please input your domain name (without www.): " domain
-        if [ -z "$domain" ]; then
-            cat <<EOF
-Domain name is required.
-Please try again, or press Ctrl+C to break and exit.
-
-EOF
-            continue
-        fi
-        break
-    done
+    if [ -z "$domain" ]; then
+        domain="domain"
+        echo "No domain inputted. Caddy will runs http server only."
+    else
+        echo "Domain="$domain
+    fi
 
     read -p "Please input listen port number(default:8081):" port
     if [ ! $port ]; then
@@ -232,6 +228,11 @@ $domain {
 
 EOF
 
+# if no domain then http only
+    if [ "$domain" == "domain" ]; then
+        sed -i 's/^domain {/http\:\/\/ {/'  /etc/caddy/Caddyfile
+    fi
+
     chmod 644 /etc/caddy/Caddyfile
 
     ## create file browser directories
@@ -360,7 +361,6 @@ filebroswer v2 path  : /usr/local/bin/filemanager
 filebroswer.db path  : /etc/filebroswer/filebroswer.db
 
 Filebrowser          : $domain/file  --> /var/www/filebroswer
-# Filebrowser share  : $domain/share --> /var/www/filebroswer/share
 =======================================================================
 EOF
     echo -n "Filebrowser default username & password: "
