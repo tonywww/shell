@@ -29,6 +29,9 @@ alias ls='ls \$LS_OPTIONS -F'
 alias ll='ls \$LS_OPTIONS -lahF'
 alias l='ls \$LS_OPTIONS -lAhF'
 
+## add sss for cut output of ss
+alias sss='sudo ss -tulnp | cut -c-$(tput cols)'
+
 ## auto run
 echo
 df -h
